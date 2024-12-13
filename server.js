@@ -33,7 +33,8 @@ app.use((req, res, next) => {
     'https://www.bagasi-frontend.netlify.app',
     'https://market.bagasi.id',
     'https://bagasi.id',
-    'https://www.bagasi.id'
+    'https://www.bagasi.id',
+    'https://api.bagasi.id'
   ];
 
   const origin = req.headers.origin;
@@ -43,13 +44,14 @@ app.use((req, res, next) => {
 
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' https://market.bagasi.id https://bagasi.id; " +
-    "connect-src 'self' http://localhost:5001 https://bagasi-backend-production.up.railway.app https://api.stripe.com https://m.stripe.network https://market.bagasi.id https://bagasi.id; " +
-    "script-src 'self' https://js.stripe.com 'unsafe-inline' 'unsafe-eval' blob: https://market.bagasi.id https://bagasi.id; " +
+    "default-src 'self' https://*.bagasi.id; " +
+    "connect-src 'self' https://*.bagasi.id https://api.stripe.com https://m.stripe.network; " +
+    "script-src 'self' https://*.bagasi.id https://js.stripe.com 'unsafe-inline' 'unsafe-eval' blob:; " +
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
     "img-src 'self' data: https: http:; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://market.bagasi.id https://bagasi.id; " +
-    "font-src 'self' https://fonts.gstatic.com data:;"
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.bagasi.id; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
+    "worker-src 'self' blob:;"
   );
 
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
