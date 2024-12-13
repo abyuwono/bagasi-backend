@@ -33,67 +33,53 @@ router.post('/create-payment-intent', auth, async (req, res) => {
 
     // Verify Stripe is properly configured
     if (!stripe.paymentIntents) {
-      throw new Error('Stripe is not properly initialized. Check your secret key.');
+      console.error('Stripe not initialized. Secret key:', process.env.STRIPE_SECRET_KEY ? 'Present' : 'Missing');
+      return res.status(500).json({ message: 'Payment service not properly configured' });
     }
 
-    console.log('Creating Stripe payment intent:', { amount, currency: 'idr' });
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'idr',
-      payment_method_types: ['card'],
-      metadata: {
-        userId: req.user._id.toString(),
+    try {
+      console.log('Creating Stripe payment intent:', { amount, currency: 'idr' });
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'idr',
+        payment_method_types: ['card'],
+        metadata: {
+          userId: req.user._id.toString(),
+          type,
+          duration: duration?.toString(),
+        },
+      });
+      console.log('Payment intent created:', paymentIntent.id);
+
+      // Create transaction record
+      const transaction = new Transaction({
+        user: req.user._id,
         type,
-        duration: duration?.toString(),
-      },
-    });
-    console.log('Payment intent created:', paymentIntent.id);
+        amount,
+        status: 'pending',
+        stripePaymentIntentId: paymentIntent.id,
+        membershipDuration: duration,
+        createdAt: new Date(),
+      });
+      await transaction.save();
+      console.log('Transaction record created:', transaction._id);
 
-    const transaction = new Transaction({
-      user: req.user._id,
-      type,
-      amount,
-      stripePaymentIntentId: paymentIntent.id,
-      membershipDuration: duration,
-      status: 'pending',
-      createdAt: new Date(),
-    });
-
-    await transaction.save();
-    console.log('Transaction saved:', transaction._id);
-
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      amount,
-    });
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        amount,
+      });
+    } catch (stripeError) {
+      console.error('Stripe error:', stripeError);
+      return res.status(500).json({ 
+        message: 'Error creating payment intent',
+        error: stripeError.message 
+      });
+    }
   } catch (error) {
-    console.error('Payment intent creation error:', {
-      message: error.message,
-      type: error.type,
-      code: error.code,
-      stack: error.stack,
-    });
-
-    // Handle specific Stripe errors
-    if (error.type === 'StripeAuthenticationError') {
-      return res.status(500).json({ 
-        message: 'Failed to authenticate with Stripe. Please check your API keys.',
-        error: error.message,
-      });
-    }
-
-    if (error.type === 'StripeConnectionError') {
-      return res.status(500).json({ 
-        message: 'Failed to connect to Stripe. Please try again.',
-        error: error.message,
-      });
-    }
-
+    console.error('Server error:', error);
     res.status(500).json({ 
-      message: 'Error creating payment', 
-      error: error.message,
-      type: error.type,
-      code: error.code,
+      message: 'Server error processing payment request',
+      error: error.message 
     });
   }
 });
