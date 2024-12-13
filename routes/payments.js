@@ -32,7 +32,11 @@ router.post('/create-membership-intent', auth, async (req, res) => {
     const { duration = 1 } = req.body;
     const amount = PRICES.membership * duration;
 
-    console.log('Creating payment intent with amount:', amount);
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    console.log('Creating payment intent with amount:', amount, 'for user:', req.user._id);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100, // Convert to smallest currency unit (sen)
@@ -92,28 +96,33 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
     try {
       // Update user membership status in your database
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Update membership validity
+      const validUntil = new Date();
+      validUntil.setMonth(validUntil.getMonth() + duration);
+      
+      user.membership = {
+        type: 'shopper',
+        validUntil: validUntil
+      };
+      await user.save();
+
+      // Update transaction record
       const transaction = await Transaction.findOne({
         stripePaymentIntentId: paymentIntent.id,
       });
 
       if (!transaction) {
-        return res.status(404).json({ message: 'Transaction not found' });
+        throw new Error('Transaction not found');
       }
 
       transaction.status = 'completed';
       transaction.completedAt = new Date();
       await transaction.save();
-
-      // Handle membership activation
-      const user = await User.findById(transaction.user);
-      const validUntil = new Date();
-      validUntil.setMonth(validUntil.getMonth() + transaction.membershipDuration);
-
-      user.membership = {
-        type: 'shopper',
-        validUntil,
-      };
-      await user.save();
 
       console.log('Payment successful for user:', userId);
       console.log('Duration:', duration, 'months');

@@ -25,6 +25,11 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200
 }));
+
+// Handle raw body for Stripe webhook
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
+// Handle JSON body for other routes
 app.use(express.json());
 
 // Security headers
