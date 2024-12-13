@@ -42,22 +42,34 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
 
+  // More permissive CSP
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' https://*.bagasi.id; " +
-    "connect-src 'self' https://*.bagasi.id https://api.stripe.com https://m.stripe.network; " +
-    "script-src 'self' https://*.bagasi.id https://js.stripe.com 'unsafe-inline' 'unsafe-eval' blob:; " +
-    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
-    "img-src 'self' data: https: http:; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.bagasi.id; " +
-    "font-src 'self' https://fonts.gstatic.com data:; " +
-    "worker-src 'self' blob:;"
+    "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+    "connect-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+    "script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+    "style-src * 'unsafe-inline' data:; " +
+    "img-src * data: blob:; " +
+    "font-src * data:; " +
+    "frame-src *; " +
+    "worker-src * blob:;"
   );
 
+  // CORS headers
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+  
+  // Additional security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   next();
 });
 
