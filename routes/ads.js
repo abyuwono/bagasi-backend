@@ -99,7 +99,7 @@ router.get('/:id', async (req, res) => {
       .populate('user', 'username email whatsappNumber rating totalReviews isVerified');
     
     if (!ad) {
-      return res.status(404).json({ message: 'Ad not found' });
+      return res.status(404).json({ message: 'ID Jasa Titipan tidak ditemukan atau telah kadaluarsa / expired' });
     }
     
     res.json(ad);
@@ -116,7 +116,7 @@ router.patch('/:id/status', auth, checkRole(['traveler']), async (req, res) => {
     const ad = await Ad.findOne({ _id: req.params.id, user: req.user._id });
 
     if (!ad) {
-      return res.status(404).json({ message: 'Ad not found' });
+      return res.status(404).json({ message: 'ID Jasa Titipan tidak ditemukan atau telah kadaluarsa / expired' });
     }
 
     ad.status = status;
@@ -142,7 +142,7 @@ router.delete('/:id', auth, checkRole(['traveler']), async (req, res) => {
     });
 
     if (!ad) {
-      return res.status(404).json({ message: 'Ad not found or cannot be deleted' });
+      return res.status(404).json({ message: 'ID not found or cannot be deleted' });
     }
 
     res.json({ message: 'Ad deleted successfully' });

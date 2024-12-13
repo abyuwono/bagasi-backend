@@ -72,6 +72,31 @@ router.post('/create-membership-intent', auth, async (req, res) => {
   }
 });
 
+// Create payment intent for ad posting
+router.post('/create-ad-posting-intent', auth, async (req, res) => {
+  try {
+    const amount = PRICES.ad_posting;
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // Convert to smallest currency unit (sen)
+      currency: 'idr',
+      payment_method_types: ['card'],
+      metadata: {
+        type: 'ad_posting',
+        userId: req.user._id.toString(),
+      },
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      amount: amount, // Send the amount back to frontend
+    });
+  } catch (error) {
+    console.error('Error creating payment intent:', error);
+    res.status(500).json({ error: 'Gagal membuat pembayaran' });
+  }
+});
+
 // Webhook to handle successful payments
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
