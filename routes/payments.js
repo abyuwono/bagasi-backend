@@ -17,6 +17,16 @@ const PRICES = {
   membership: 95000,  // Rp 95.000 per month
 };
 
+// Get membership price
+router.get('/membership-price', async (req, res) => {
+  try {
+    res.json({ price: PRICES.membership });
+  } catch (error) {
+    console.error('Error getting membership price:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create payment intent
 router.post('/create-payment-intent', auth, async (req, res) => {
   try {
