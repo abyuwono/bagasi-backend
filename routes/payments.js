@@ -89,7 +89,6 @@ router.post('/create-ad-posting-intent', auth, async (req, res) => {
 
     res.json({
       clientSecret: paymentIntent.client_secret,
-      amount: amount, // Send the amount back to frontend
     });
   } catch (error) {
     console.error('Error creating payment intent:', error);
