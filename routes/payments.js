@@ -1,6 +1,6 @@
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { auth } = require('../middleware/auth');
+const { verifyToken } = require('../middleware/auth');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 
@@ -27,97 +27,72 @@ router.get('/membership-price', async (req, res) => {
   }
 });
 
-// Create payment intent
-router.post('/create-payment-intent', auth, async (req, res) => {
+// Create payment intent for membership
+router.post('/create-membership-intent', verifyToken, async (req, res) => {
   try {
-    const { type, duration } = req.body;
-    console.log('Creating payment intent:', { type, duration, userId: req.user._id });
-    
-    if (!PRICES[type]) {
-      console.error('Invalid payment type:', type);
-      return res.status(400).json({ message: `Invalid payment type: ${type}` });
-    }
+    const { duration = 1 } = req.body;
+    const amount = PRICES.membership * duration;
 
-    // Calculate base amount
-    let baseAmount = type === 'membership' 
-      ? PRICES[type] * (duration || 1)
-      : PRICES[type];
-    
-    // Convert to smallest currency unit (sen/cents) for Stripe
-    const stripeAmount = Math.round(baseAmount * 100);
+    console.log('Creating payment intent with amount:', amount);
 
-    // Verify Stripe is properly configured
-    if (!stripe.paymentIntents) {
-      console.error('Stripe not initialized. Secret key:', process.env.STRIPE_SECRET_KEY ? 'Present' : 'Missing');
-      return res.status(500).json({ message: 'Payment service not properly configured' });
-    }
-
-    try {
-      console.log('Creating Stripe payment intent:', { baseAmount, stripeAmount, currency: 'idr' });
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: stripeAmount,
-        currency: 'idr',
-        payment_method_types: ['card'],
-        metadata: {
-          userId: req.user._id.toString(),
-          type,
-          duration: duration?.toString(),
-          originalAmount: baseAmount.toString(),
-        },
-      });
-      console.log('Payment intent created:', paymentIntent.id);
-
-      // Create transaction record
-      const transaction = new Transaction({
-        user: req.user._id,
-        type,
-        amount: baseAmount, // Store original amount in database
-        status: 'pending',
-        stripePaymentIntentId: paymentIntent.id,
-        membershipDuration: duration,
-        createdAt: new Date(),
-      });
-      await transaction.save();
-      console.log('Transaction record created:', transaction._id);
-
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        amount: baseAmount,
-      });
-    } catch (stripeError) {
-      console.error('Stripe error:', stripeError);
-      return res.status(500).json({ 
-        message: 'Error creating payment intent',
-        error: stripeError.message 
-      });
-    }
-  } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ 
-      message: 'Server error processing payment request',
-      error: error.message 
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // Convert to smallest currency unit (sen)
+      currency: 'idr',
+      payment_method_types: ['card'],
+      metadata: {
+        userId: req.user._id.toString(),
+        type: 'membership',
+        duration: duration,
+        originalAmount: amount
+      }
     });
+
+    console.log('Payment intent created:', paymentIntent.id);
+
+    // Create transaction record
+    const transaction = new Transaction({
+      user: req.user._id,
+      type: 'membership',
+      amount: amount, // Store original amount in database
+      status: 'pending',
+      stripePaymentIntentId: paymentIntent.id,
+      membershipDuration: duration,
+      createdAt: new Date(),
+    });
+    await transaction.save();
+    console.log('Transaction record created:', transaction._id);
+
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    console.error('Error creating payment intent:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Stripe webhook
+// Webhook to handle successful payments
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
   try {
-    const sig = req.headers['stripe-signature'];
-    let event;
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object;
+    const userId = paymentIntent.metadata.userId;
+    const duration = parseInt(paymentIntent.metadata.duration);
+    const originalAmount = parseInt(paymentIntent.metadata.originalAmount);
 
     try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      return res.status(400).json({ message: `Webhook Error: ${err.message}` });
-    }
-
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object;
+      // Update user membership status in your database
       const transaction = await Transaction.findOne({
         stripePaymentIntentId: paymentIntent.id,
       });
@@ -131,27 +106,30 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       await transaction.save();
 
       // Handle membership activation
-      if (transaction.type === 'membership') {
-        const user = await User.findById(transaction.user);
-        const validUntil = new Date();
-        validUntil.setMonth(validUntil.getMonth() + transaction.membershipDuration);
+      const user = await User.findById(transaction.user);
+      const validUntil = new Date();
+      validUntil.setMonth(validUntil.getMonth() + transaction.membershipDuration);
 
-        user.membership = {
-          type: 'shopper',
-          validUntil,
-        };
-        await user.save();
-      }
+      user.membership = {
+        type: 'shopper',
+        validUntil,
+      };
+      await user.save();
+
+      console.log('Payment successful for user:', userId);
+      console.log('Duration:', duration, 'months');
+      console.log('Amount:', originalAmount);
+    } catch (error) {
+      console.error('Error updating user membership:', error);
+      return res.status(500).json({ error: error.message });
     }
-
-    res.json({ received: true });
-  } catch (error) {
-    res.status(500).json({ message: 'Webhook error', error: error.message });
   }
+
+  res.json({ received: true });
 });
 
 // Get user transactions
-router.get('/transactions', auth, async (req, res) => {
+router.get('/transactions', verifyToken, async (req, res) => {
   try {
     const transactions = await Transaction.find({ user: req.user._id })
       .sort({ createdAt: -1 });
