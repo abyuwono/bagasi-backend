@@ -14,14 +14,16 @@ app.use(cors({
     'http://localhost:3000',
     'https://bagasi-frontend.netlify.app',
     'https://www.bagasi-frontend.netlify.app',
-    'https://market.bagasi.id/',
-    'https://bagasi.id/',
-    'https://www.bagasi.id/'
+    'https://market.bagasi.id',
+    'https://bagasi.id',
+    'https://www.bagasi.id',
+    'https://api.bagasi.id'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 app.use(express.json());
 
