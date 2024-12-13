@@ -20,25 +20,42 @@ app.use(cors({
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 app.use(express.json());
 
 // Security headers
 app.use((req, res, next) => {
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://bagasi-frontend.netlify.app',
+    'https://www.bagasi-frontend.netlify.app',
+    'https://market.bagasi.id',
+    'https://bagasi.id',
+    'https://www.bagasi.id'
+  ];
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; " +
-    "connect-src 'self' http://localhost:5001 https://bagasi-backend-production.up.railway.app https://api.stripe.com https://m.stripe.network; " +
-    "script-src 'self' https://js.stripe.com 'unsafe-inline' 'unsafe-eval' blob:; " +
+    "default-src 'self' https://market.bagasi.id https://bagasi.id; " +
+    "connect-src 'self' http://localhost:5001 https://bagasi-backend-production.up.railway.app https://api.stripe.com https://m.stripe.network https://market.bagasi.id https://bagasi.id; " +
+    "script-src 'self' https://js.stripe.com 'unsafe-inline' 'unsafe-eval' blob: https://market.bagasi.id https://bagasi.id; " +
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
     "img-src 'self' data: https: http:; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com"
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://market.bagasi.id https://bagasi.id; " +
+    "font-src 'self' https://fonts.gstatic.com data:;"
   );
-  res.setHeader('Access-Control-Allow-Origin', '*');
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
   next();
 });
 
