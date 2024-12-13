@@ -1,10 +1,9 @@
 const express = require('express');
+const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { verifyToken } = require('../middleware/auth');
+const auth = require('../middleware/auth');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
-
-const router = express.Router();
 
 // Verify Stripe configuration
 if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.length < 30) {
@@ -28,7 +27,7 @@ router.get('/membership-price', async (req, res) => {
 });
 
 // Create payment intent for membership
-router.post('/create-membership-intent', verifyToken, async (req, res) => {
+router.post('/create-membership-intent', auth, async (req, res) => {
   try {
     const { duration = 1 } = req.body;
     const amount = PRICES.membership * duration;
@@ -129,13 +128,14 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 });
 
 // Get user transactions
-router.get('/transactions', verifyToken, async (req, res) => {
+router.get('/transactions', auth, async (req, res) => {
   try {
     const transactions = await Transaction.find({ user: req.user._id })
       .sort({ createdAt: -1 });
     res.json(transactions);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching transactions', error: error.message });
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
