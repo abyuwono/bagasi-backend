@@ -11,6 +11,7 @@ if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.length < 30)
   console.error('Invalid or missing Stripe secret key');
 }
 
+// Prices in IDR
 const PRICES = {
   ad_posting: 195000, // Rp 195.000
   membership: 95000,  // Rp 95.000 per month
@@ -27,9 +28,13 @@ router.post('/create-payment-intent', auth, async (req, res) => {
       return res.status(400).json({ message: `Invalid payment type: ${type}` });
     }
 
-    const amount = type === 'membership' 
+    // Calculate base amount
+    let baseAmount = type === 'membership' 
       ? PRICES[type] * (duration || 1)
       : PRICES[type];
+    
+    // Convert to smallest currency unit (sen/cents) for Stripe
+    const stripeAmount = Math.round(baseAmount * 100);
 
     // Verify Stripe is properly configured
     if (!stripe.paymentIntents) {
@@ -38,15 +43,16 @@ router.post('/create-payment-intent', auth, async (req, res) => {
     }
 
     try {
-      console.log('Creating Stripe payment intent:', { amount, currency: 'idr' });
+      console.log('Creating Stripe payment intent:', { baseAmount, stripeAmount, currency: 'idr' });
       const paymentIntent = await stripe.paymentIntents.create({
-        amount,
+        amount: stripeAmount,
         currency: 'idr',
         payment_method_types: ['card'],
         metadata: {
           userId: req.user._id.toString(),
           type,
           duration: duration?.toString(),
+          originalAmount: baseAmount.toString(),
         },
       });
       console.log('Payment intent created:', paymentIntent.id);
@@ -55,7 +61,7 @@ router.post('/create-payment-intent', auth, async (req, res) => {
       const transaction = new Transaction({
         user: req.user._id,
         type,
-        amount,
+        amount: baseAmount, // Store original amount in database
         status: 'pending',
         stripePaymentIntentId: paymentIntent.id,
         membershipDuration: duration,
@@ -66,7 +72,7 @@ router.post('/create-payment-intent', auth, async (req, res) => {
 
       res.json({
         clientSecret: paymentIntent.client_secret,
-        amount,
+        amount: baseAmount,
       });
     } catch (stripeError) {
       console.error('Stripe error:', stripeError);
