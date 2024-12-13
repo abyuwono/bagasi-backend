@@ -39,6 +39,7 @@ router.post('/register', async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: 'Error registering user', error: error.message });
   }
 });
@@ -48,7 +49,8 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // Explicitly select the password field
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -62,6 +64,10 @@ router.post('/login', async (req, res) => {
       expiresIn: '7d',
     });
 
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
     res.json({
       token,
       user: {
@@ -70,9 +76,14 @@ router.post('/login', async (req, res) => {
         role: user.role,
         whatsappNumber: user.whatsappNumber,
         membership: user.membership,
+        isVerified: user.isVerified,
+        username: user.username,
+        rating: user.rating,
+        totalReviews: user.totalReviews,
       },
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 });
@@ -83,6 +94,7 @@ router.get('/me', auth, async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
     res.json(user);
   } catch (error) {
+    console.error('Get user error:', error);
     res.status(500).json({ message: 'Error fetching user', error: error.message });
   }
 });
