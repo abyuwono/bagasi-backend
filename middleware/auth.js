@@ -16,6 +16,10 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
+    if (!user.active) {
+      return res.status(403).json({ message: 'Account is deactivated' });
+    }
+
     req.user = user;
     next();
   } catch (error) {
@@ -32,4 +36,11 @@ const checkRole = (roles) => {
   };
 };
 
-module.exports = { auth, checkRole };
+const authenticateAdmin = (req, res, next) => {
+  if (!req.session || !req.session.isAdmin) {
+    return res.status(401).json({ message: 'Admin authentication required' });
+  }
+  next();
+};
+
+module.exports = { auth, checkRole, authenticateAdmin };

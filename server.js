@@ -2,9 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const session = require('express-session');
 const authRoutes = require('./routes/auth');
 const adRoutes = require('./routes/ads');
 const paymentRoutes = require('./routes/payments');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -31,6 +33,17 @@ app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 // Handle JSON body for other routes
 app.use(express.json());
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'bagasi-admin-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 // Security headers
 app.use((req, res, next) => {
@@ -87,6 +100,7 @@ app.use((err, req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/ads', adRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes);
 
 // MongoDB connection with fallback to local
 const connectDB = async () => {
