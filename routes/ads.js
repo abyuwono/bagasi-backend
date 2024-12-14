@@ -94,6 +94,11 @@ router.get('/', async (req, res) => {
 
 // Get single ad
 router.get('/:id', async (req, res) => {
+  // Skip ObjectId validation for special paths
+  if (req.params.id === 'payment' || req.params.id === 'payment-success') {
+    return res.status(404).json({ message: 'Invalid path' });
+  }
+
   try {
     const ad = await Ad.findById(req.params.id)
       .populate('user', 'username email whatsappNumber rating totalReviews isVerified');
