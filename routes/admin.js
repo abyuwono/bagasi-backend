@@ -9,16 +9,20 @@ const { generateAuthenticationOptions, verifyAuthenticationResponse } = require(
 router.post('/auth/generate-auth-options', async (req, res) => {
   try {
     const options = await generateAuthenticationOptions({
-      rpID: process.env.RP_ID || 'localhost',
+      rpID: process.env.RP_ID || 'bagasi.id',
       allowCredentials: [], // Add stored credentials
       userVerification: 'preferred',
     });
     
     // Store challenge for verification
+    if (!req.session) {
+      req.session = {};
+    }
     req.session.challenge = options.challenge;
     
     res.json(options);
   } catch (error) {
+    console.error('Generate auth options error:', error);
     res.status(500).json({ error: 'Failed to generate authentication options' });
   }
 });
@@ -26,22 +30,31 @@ router.post('/auth/generate-auth-options', async (req, res) => {
 router.post('/auth/verify', async (req, res) => {
   try {
     const { credential } = req.body;
+    
+    if (!req.session || !req.session.challenge) {
+      return res.status(400).json({ error: 'No challenge found. Please try again.' });
+    }
+    
     const expectedChallenge = req.session.challenge;
     
     const verification = await verifyAuthenticationResponse({
       credential,
       expectedChallenge,
-      expectedOrigin: process.env.ORIGIN || 'http://localhost:3000',
-      expectedRPID: process.env.RP_ID || 'localhost',
+      expectedOrigin: process.env.ORIGIN || 'https://market.bagasi.id',
+      expectedRPID: process.env.RP_ID || 'bagasi.id',
     });
     
     if (verification.verified) {
+      if (!req.session) {
+        req.session = {};
+      }
       req.session.isAdmin = true;
       res.json({ success: true });
     } else {
       res.status(401).json({ error: 'Authentication failed' });
     }
   } catch (error) {
+    console.error('Verification error:', error);
     res.status(500).json({ error: 'Verification failed' });
   }
 });
