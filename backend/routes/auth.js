@@ -62,6 +62,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Email atau password salah' });
     }
 
+    // Check if account is deactivated after successful password check
+    if (!user.active) {
+      return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.' });
+    }
+
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
