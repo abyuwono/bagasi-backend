@@ -16,6 +16,10 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
+    if (!user.active) {
+      return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.' });
+    }
+
     req.user = user;
     next();
   } catch (error) {

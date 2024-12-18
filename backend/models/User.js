@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     select: true
   },
+  active: {
+    type: Boolean,
+    default: true,
+    required: true
+  },
   membership: {
     type: {
       type: String,
