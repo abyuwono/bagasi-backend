@@ -104,9 +104,17 @@ router.patch('/users/:userId/whatsapp', authenticateAdmin, async (req, res) => {
 // Ad management endpoints
 router.get('/ads', authenticateAdmin, async (req, res) => {
   try {
-    const ads = await Ad.find().populate('user', 'name email whatsapp');
+    const ads = await Ad.find()
+      .populate('user', 'name email whatsapp')
+      .sort({ createdAt: -1 });
+    console.log('Fetched ads:', ads.map(ad => ({ 
+      id: ad._id,
+      user: ad.user ? { email: ad.user.email, name: ad.user.name } : null,
+      expiresAt: ad.expiresAt
+    })));
     res.json(ads);
   } catch (error) {
+    console.error('Error fetching ads:', error);
     res.status(500).json({ error: 'Failed to fetch ads' });
   }
 });
