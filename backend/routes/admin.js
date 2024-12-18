@@ -9,9 +9,10 @@ const { generateAuthenticationOptions, verifyAuthenticationResponse } = require(
 router.post('/auth/generate-auth-options', async (req, res) => {
   try {
     const options = await generateAuthenticationOptions({
-      rpID: process.env.RP_ID || 'localhost',
+      rpID: process.env.RP_ID || 'market.bagasi.id',
       allowCredentials: [], // Add stored credentials
       userVerification: 'preferred',
+      timeout: 60000,
     });
     
     // Store challenge for verification
@@ -19,6 +20,7 @@ router.post('/auth/generate-auth-options', async (req, res) => {
     
     res.json(options);
   } catch (error) {
+    console.error('Auth options error:', error);
     res.status(500).json({ error: 'Failed to generate authentication options' });
   }
 });
@@ -31,8 +33,8 @@ router.post('/auth/verify', async (req, res) => {
     const verification = await verifyAuthenticationResponse({
       credential,
       expectedChallenge,
-      expectedOrigin: process.env.ORIGIN || 'http://localhost:3000',
-      expectedRPID: process.env.RP_ID || 'localhost',
+      expectedOrigin: process.env.ORIGIN || 'https://market.bagasi.id',
+      expectedRPID: process.env.RP_ID || 'market.bagasi.id',
     });
     
     if (verification.verified) {
