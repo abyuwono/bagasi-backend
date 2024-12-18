@@ -8,21 +8,17 @@ const jwt = require('jsonwebtoken');
 
 // Admin credentials
 const ADMIN_USERNAME = 'administrator';
-const ADMIN_PASSWORD = '$2a$10$KNELp.7Yg0qKhUkUNLGBqe8SkjqR3GQh/lN.TxFGQTKLJQSgHAEr6'; // Will update this later
+const ADMIN_PASSWORD = 'masamisi888'; // Plain password for now
 
 // Admin authentication endpoint
 router.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log('Login attempt:', { username }); // Log for debugging
 
     // Validate credentials
-    if (username !== ADMIN_USERNAME) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, ADMIN_PASSWORD);
-    if (!isValidPassword) {
+    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+      console.log('Invalid credentials'); // Log for debugging
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
