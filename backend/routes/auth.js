@@ -106,11 +106,8 @@ router.post('/login', async (req, res) => {
 });
 
 // Logout
-router.post('/logout', auth, async (req, res) => {
+router.post('/logout', async (req, res) => {
   try {
-    // Get user from auth middleware
-    const user = req.user;
-    
     // Reset any session data
     if (req.session) {
       req.session.destroy();
