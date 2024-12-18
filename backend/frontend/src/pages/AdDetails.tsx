@@ -55,7 +55,6 @@ const AdDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const [bookingWeight, setBookingWeight] = useState('');
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [showContact, setShowContact] = useState(false);
@@ -226,7 +225,14 @@ const AdDetails = () => {
                     color="primary"
                     fullWidth
                     startIcon={<WhatsApp />}
-                    onClick={() => setSubscriptionDialogOpen(true)}
+                    onClick={() => {
+                      const dialog = window.confirm(
+                        'Untuk menghubungi penjual, Anda perlu berlangganan dengan biaya Rp 95.000/bulan. Lanjutkan ke halaman keanggotaan?'
+                      );
+                      if (dialog) {
+                        navigate('/membership');
+                      }
+                    }}
                   >
                     Kirim Pesan
                   </Button>
@@ -290,28 +296,6 @@ const AdDetails = () => {
           <Button onClick={() => setBookingDialogOpen(false)}>Batal</Button>
           <Button onClick={handleBookingSubmit} variant="contained" color="primary">
             Pesan
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={subscriptionDialogOpen} onClose={() => setSubscriptionDialogOpen(false)}>
-        <DialogTitle>Berlangganan untuk Menghubungi Penjual</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Untuk menghubungi penjual, Anda perlu berlangganan dengan biaya Rp 95.000/bulan.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSubscriptionDialogOpen(false)}>Batal</Button>
-          <Button 
-            onClick={() => {
-              setSubscriptionDialogOpen(false);
-              navigate('/membership');
-            }} 
-            variant="contained" 
-            color="primary"
-          >
-            Lanjutkan ke Keanggotaan
           </Button>
         </DialogActions>
       </Dialog>

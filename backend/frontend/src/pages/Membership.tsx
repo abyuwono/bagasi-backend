@@ -39,17 +39,15 @@ const PaymentForm = ({ onSuccess, onError }: { onSuccess: () => void; onError: (
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
-  const [stripeError, setStripeError] = useState<string | null>(null);
   const selectedPlan = 'monthly';
   const duration = selectedPlan === 'monthly' ? 1 : 12;
   const { user } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setStripeError(null);
 
     if (!stripe || !elements) {
-      setStripeError('Stripe belum siap. Silakan coba lagi.');
+      onError('Stripe belum siap. Silakan coba lagi.');
       return;
     }
 
@@ -84,8 +82,7 @@ const PaymentForm = ({ onSuccess, onError }: { onSuccess: () => void; onError: (
 
       if (stripeError) {
         console.error('Payment failed:', stripeError);
-        setStripeError(stripeError.message || 'Pembayaran gagal. Silakan coba lagi.');
-        return;
+        throw new Error(stripeError.message);
       }
 
       if (paymentIntent?.status === 'succeeded') {
@@ -93,7 +90,7 @@ const PaymentForm = ({ onSuccess, onError }: { onSuccess: () => void; onError: (
         onSuccess();
       } else {
         console.error('Payment not successful:', paymentIntent);
-        setStripeError('Pembayaran gagal. Silakan coba lagi.');
+        throw new Error('Pembayaran gagal. Silakan coba lagi.');
       }
     } catch (error: any) {
       console.error('Payment error:', error);
@@ -102,7 +99,7 @@ const PaymentForm = ({ onSuccess, onError }: { onSuccess: () => void; onError: (
       } else if (error?.response?.status === 401 || error?.response?.status === 403) {
         onError('Sesi Anda telah berakhir. Silakan login kembali.');
       } else {
-        setStripeError(error.message || 'Terjadi kesalahan. Silakan coba lagi.');
+        onError(error.message || 'Terjadi kesalahan saat memproses pembayaran');
       }
     } finally {
       setLoading(false);
@@ -111,12 +108,7 @@ const PaymentForm = ({ onSuccess, onError }: { onSuccess: () => void; onError: (
 
   return (
     <form onSubmit={handleSubmit}>
-      {stripeError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {stripeError}
-        </Alert>
-      )}
-      <Box mb={3}>
+      <Box sx={{ mb: 2 }}>
         <CardElement
           options={{
             style: {
@@ -137,18 +129,15 @@ const PaymentForm = ({ onSuccess, onError }: { onSuccess: () => void; onError: (
       <Button
         type="submit"
         variant="contained"
+        color="primary"
         fullWidth
-        disabled={!stripe || loading}
-        sx={{
-          py: 1.5,
-          textTransform: 'none',
-          fontSize: '1rem',
-        }}
+        disabled={loading || !stripe}
+        sx={{ mt: 2 }}
       >
         {loading ? (
-          <CircularProgress size={24} />
+          <CircularProgress size={24} color="inherit" />
         ) : (
-          'Bayar Sekarang'
+          'BERLANGGANAN SEKARANG'
         )}
       </Button>
     </form>

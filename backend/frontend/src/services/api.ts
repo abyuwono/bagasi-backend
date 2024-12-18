@@ -174,7 +174,7 @@ export const payments = {
       }
 
       // If auth check passes, create payment intent
-      const response = await api.post('/payments/create-membership-intent', { duration });
+      const response = await api.post('/payments/membership/create-intent', { duration });
       return response.data;
     } catch (error: any) {
       console.error('Create membership intent error:', error.response?.data || error.message);
