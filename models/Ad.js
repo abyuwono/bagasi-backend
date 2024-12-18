@@ -6,6 +6,16 @@ const adSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  customDisplayName: {
+    type: String,
+    default: undefined
+  },
+  customRating: {
+    type: Number,
+    min: 0,
+    max: 5,
+    default: undefined
+  },
   departureCity: {
     type: String,
     required: true,

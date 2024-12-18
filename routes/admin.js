@@ -148,13 +148,13 @@ router.patch('/ads/:adId/status', authenticateAdmin, async (req, res) => {
 
 router.post('/ads', authenticateAdmin, async (req, res) => {
   try {
-    const { userId, departureDate, ...adData } = req.body;
+    const { userId, departureDate, customDisplayName, customRating, ...adData } = req.body;
     
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     // Calculate expiresAt as 1 day before departure
     const departureDateObj = new Date(departureDate);
     const expiresAt = new Date(departureDateObj);
@@ -165,7 +165,9 @@ router.post('/ads', authenticateAdmin, async (req, res) => {
       departureDate,
       expiresAt,
       user: userId,
-      active: true,
+      customDisplayName: customDisplayName || undefined,
+      customRating: customRating || undefined,
+      status: 'active',
       createdAt: new Date()
     });
     
@@ -174,7 +176,7 @@ router.post('/ads', authenticateAdmin, async (req, res) => {
     
     res.status(201).json(ad);
   } catch (error) {
-    console.error('Admin ad creation error:', error); // Add error logging
+    console.error('Admin ad creation error:', error);
     res.status(500).json({ error: 'Failed to create ad' });
   }
 });
