@@ -18,6 +18,13 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
+    // Check if active is undefined, treat as active
+    if (user.active === undefined) {
+      user.active = true;
+      await user.save();
+      console.log('Set default active status for user:', user.email);
+    }
+
     if (user.active === false) {
       console.log('Auth middleware: User is deactivated');
       return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.' });

@@ -64,6 +64,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Email atau password salah' });
     }
 
+    // Check if active is undefined, treat as active
+    if (user.active === undefined) {
+      user.active = true;
+      await user.save();
+      console.log('Set default active status for user:', user.email);
+    }
+
     // Check if account is deactivated after successful password check
     if (user.active === false) {
       console.log('User account is deactivated:', email);
