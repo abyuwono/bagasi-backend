@@ -26,9 +26,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return response;
     } catch (error: any) {
       console.error('Auth state check failed:', error.message);
-      // Clear state for auth errors
-      setUser(null);
-      setIsAuthenticated(false);
+      // Only clear state for auth errors that aren't related to deactivation
+      if (error.response?.status !== 403) {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
       throw error;
     }
   };
