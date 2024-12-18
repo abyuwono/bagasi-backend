@@ -8,6 +8,9 @@ const { generateAuthenticationOptions, verifyAuthenticationResponse } = require(
 // Admin authentication endpoints
 router.post('/auth/generate-auth-options', async (req, res) => {
   try {
+    console.log('Generating auth options...');
+    console.log('Session:', req.session);
+    
     const options = await generateAuthenticationOptions({
       rpID: process.env.RP_ID || 'bagasi.id',
       allowCredentials: [], // Add stored credentials
@@ -16,19 +19,25 @@ router.post('/auth/generate-auth-options', async (req, res) => {
     
     // Store challenge for verification
     if (!req.session) {
+      console.log('Creating new session');
       req.session = {};
     }
     req.session.challenge = options.challenge;
+    console.log('Challenge stored:', req.session.challenge);
     
     res.json(options);
   } catch (error) {
     console.error('Generate auth options error:', error);
-    res.status(500).json({ error: 'Failed to generate authentication options' });
+    res.status(500).json({ error: 'Failed to generate authentication options', details: error.message });
   }
 });
 
 router.post('/auth/verify', async (req, res) => {
   try {
+    console.log('Verifying auth...');
+    console.log('Session:', req.session);
+    console.log('Challenge:', req.session?.challenge);
+    
     const { credential } = req.body;
     
     if (!req.session || !req.session.challenge) {
@@ -49,13 +58,15 @@ router.post('/auth/verify', async (req, res) => {
         req.session = {};
       }
       req.session.isAdmin = true;
+      console.log('Authentication successful');
       res.json({ success: true });
     } else {
+      console.log('Authentication failed');
       res.status(401).json({ error: 'Authentication failed' });
     }
   } catch (error) {
     console.error('Verification error:', error);
-    res.status(500).json({ error: 'Verification failed' });
+    res.status(500).json({ error: 'Verification failed', details: error.message });
   }
 });
 
