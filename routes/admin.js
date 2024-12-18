@@ -3,70 +3,36 @@ const router = express.Router();
 const User = require('../models/User');
 const Ad = require('../models/Ad');
 const { authenticateAdmin } = require('../middleware/auth');
-const { generateAuthenticationOptions, verifyAuthenticationResponse } = require('@simplewebauthn/server');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// Admin authentication endpoints
-router.post('/auth/generate-auth-options', async (req, res) => {
-  try {
-    console.log('Generating auth options...');
-    console.log('Session:', req.session);
-    
-    const options = await generateAuthenticationOptions({
-      rpID: process.env.RP_ID || 'bagasi.id',
-      allowCredentials: [], // Add stored credentials
-      userVerification: 'preferred',
-    });
-    
-    // Store challenge for verification
-    if (!req.session) {
-      console.log('Creating new session');
-      req.session = {};
-    }
-    req.session.challenge = options.challenge;
-    console.log('Challenge stored:', req.session.challenge);
-    
-    res.json(options);
-  } catch (error) {
-    console.error('Generate auth options error:', error);
-    res.status(500).json({ error: 'Failed to generate authentication options', details: error.message });
-  }
-});
+// Admin credentials
+const ADMIN_USERNAME = 'administrator';
+const ADMIN_PASSWORD = '$2a$10$KNELp.7Yg0qKhUkUNLGBqe8SkjqR3GQh/lN.TxFGQTKLJQSgHAEr6'; // Will update this later
 
-router.post('/auth/verify', async (req, res) => {
+// Admin authentication endpoint
+router.post('/auth/login', async (req, res) => {
   try {
-    console.log('Verifying auth...');
-    console.log('Session:', req.session);
-    console.log('Challenge:', req.session?.challenge);
-    
-    const { credential } = req.body;
-    
-    if (!req.session || !req.session.challenge) {
-      return res.status(400).json({ error: 'No challenge found. Please try again.' });
+    const { username, password } = req.body;
+
+    // Validate credentials
+    if (username !== ADMIN_USERNAME) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
-    const expectedChallenge = req.session.challenge;
-    
-    const verification = await verifyAuthenticationResponse({
-      credential,
-      expectedChallenge,
-      expectedOrigin: process.env.ORIGIN || 'https://market.bagasi.id',
-      expectedRPID: process.env.RP_ID || 'bagasi.id',
-    });
-    
-    if (verification.verified) {
-      if (!req.session) {
-        req.session = {};
-      }
-      req.session.isAdmin = true;
-      console.log('Authentication successful');
-      res.json({ success: true });
-    } else {
-      console.log('Authentication failed');
-      res.status(401).json({ error: 'Authentication failed' });
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, ADMIN_PASSWORD);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Set admin session
+    req.session.isAdmin = true;
+    
+    res.json({ success: true });
   } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).json({ error: 'Verification failed', details: error.message });
+    console.error('Admin login error:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
