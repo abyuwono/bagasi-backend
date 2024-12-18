@@ -108,10 +108,11 @@ router.get('/ads', authenticateAdmin, async (req, res) => {
       .populate('user', 'name email whatsapp')
       .sort({ createdAt: -1 });
     
-    // Update active status based on expiration
+    // Check if ads are active based on expiration and status
     const now = new Date();
     ads.forEach(ad => {
-      ad.active = ad.active && new Date(ad.expiresAt) > now;
+      const isExpired = new Date(ad.expiresAt) <= now;
+      ad.active = !isExpired && ad.status === 'active';
     });
 
     res.json(ads);
@@ -131,20 +132,20 @@ router.patch('/ads/:adId/status', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Ad not found' });
     }
 
-    // If deactivating, set status to expired
-    if (!active) {
+    const now = new Date();
+    const isExpired = new Date(ad.expiresAt) <= now;
+
+    // Update status based on active flag and expiration
+    if (isExpired) {
       ad.status = 'expired';
+      ad.active = false;
     } else {
-      // Only allow activation if not expired
-      const now = new Date();
-      if (new Date(ad.expiresAt) <= now) {
-        return res.status(400).json({ error: 'Cannot activate expired ad' });
-      }
-      ad.status = 'active';
+      ad.status = active ? 'active' : 'expired';
+      ad.active = active;
     }
     
-    ad.active = active;
     await ad.save();
+    console.log('Updated ad status:', { id: ad._id, status: ad.status, active: ad.active });
     
     res.json(ad);
   } catch (error) {
