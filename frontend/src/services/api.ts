@@ -4,26 +4,21 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
-// Add authentication token to all requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  console.log('Token from localStorage:', token);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-    console.log('Request headers:', JSON.stringify(config.headers));
-  } else {
-    console.log('No token found in localStorage');
+// Add request interceptor to add token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-}, (error) => {
-  console.error('Request interceptor error:', error);
-  return Promise.reject(error);
-});
+);
 
 // Add response interceptor to handle auth errors
 api.interceptors.response.use(
