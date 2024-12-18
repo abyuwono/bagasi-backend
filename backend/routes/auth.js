@@ -105,6 +105,24 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Logout
+router.post('/logout', auth, async (req, res) => {
+  try {
+    // Get user from auth middleware
+    const user = req.user;
+    
+    // Reset any session data
+    if (req.session) {
+      req.session.destroy();
+    }
+
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ message: 'Error during logout' });
+  }
+});
+
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
