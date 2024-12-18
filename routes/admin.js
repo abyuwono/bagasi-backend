@@ -26,10 +26,19 @@ router.post('/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Set admin session
+    // Generate JWT token
+    const token = jwt.sign(
+      { isAdmin: true },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    // Set session and send token
     req.session.isAdmin = true;
-    
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      token 
+    });
   } catch (error) {
     console.error('Admin login error:', error);
     res.status(500).json({ error: 'Login failed' });
