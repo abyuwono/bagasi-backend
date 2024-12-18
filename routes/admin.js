@@ -108,11 +108,10 @@ router.get('/ads', authenticateAdmin, async (req, res) => {
       .populate('user', 'name email whatsapp')
       .sort({ createdAt: -1 });
     
-    // Check if ads are active based on expiration and status
+    // Check if ad should be shown on main page
     const now = new Date();
     ads.forEach(ad => {
-      const isExpired = new Date(ad.expiresAt) <= now;
-      ad.active = !isExpired && ad.status === 'active';
+      ad.active = ad.status === 'active' && new Date(ad.expiresAt) > now;
     });
 
     res.json(ads);
@@ -132,20 +131,13 @@ router.patch('/ads/:adId/status', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Ad not found' });
     }
 
-    const now = new Date();
-    const isExpired = new Date(ad.expiresAt) <= now;
-
-    // Update status based on active flag and expiration
-    if (isExpired) {
-      ad.status = 'expired';
-      ad.active = false;
-    } else {
-      ad.status = active ? 'active' : 'expired';
-      ad.active = active;
-    }
-    
+    // Set status based on toggle
+    ad.status = active ? 'active' : 'expired';
     await ad.save();
-    console.log('Updated ad status:', { id: ad._id, status: ad.status, active: ad.active });
+    
+    // Return whether it's actually showing on main page
+    const now = new Date();
+    ad.active = ad.status === 'active' && new Date(ad.expiresAt) > now;
     
     res.json(ad);
   } catch (error) {
