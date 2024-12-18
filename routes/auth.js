@@ -55,7 +55,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Explicitly select the password field
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password +active');
     
     // Use the same error message for both cases to prevent user enumeration
     if (!user || !(await user.comparePassword(password))) {
