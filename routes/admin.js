@@ -107,11 +107,13 @@ router.get('/ads', authenticateAdmin, async (req, res) => {
     const ads = await Ad.find()
       .populate('user', 'name email whatsapp')
       .sort({ createdAt: -1 });
-    console.log('Fetched ads:', ads.map(ad => ({ 
-      id: ad._id,
-      user: ad.user ? { email: ad.user.email, name: ad.user.name } : null,
-      expiresAt: ad.expiresAt
-    })));
+    
+    // Update active status based on expiration
+    const now = new Date();
+    ads.forEach(ad => {
+      ad.active = ad.active && new Date(ad.expiresAt) > now;
+    });
+
     res.json(ads);
   } catch (error) {
     console.error('Error fetching ads:', error);
@@ -124,18 +126,29 @@ router.patch('/ads/:adId/status', authenticateAdmin, async (req, res) => {
     const { adId } = req.params;
     const { active } = req.body;
     
-    const ad = await Ad.findByIdAndUpdate(
-      adId,
-      { active },
-      { new: true }
-    ).populate('user', 'name email whatsapp');
-    
+    const ad = await Ad.findById(adId).populate('user', 'name email whatsapp');
     if (!ad) {
       return res.status(404).json({ error: 'Ad not found' });
     }
+
+    // If deactivating, set status to expired
+    if (!active) {
+      ad.status = 'expired';
+    } else {
+      // Only allow activation if not expired
+      const now = new Date();
+      if (new Date(ad.expiresAt) <= now) {
+        return res.status(400).json({ error: 'Cannot activate expired ad' });
+      }
+      ad.status = 'active';
+    }
+    
+    ad.active = active;
+    await ad.save();
     
     res.json(ad);
   } catch (error) {
+    console.error('Error updating ad status:', error);
     res.status(500).json({ error: 'Failed to update ad status' });
   }
 });
