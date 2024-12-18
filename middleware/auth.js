@@ -33,10 +33,24 @@ const checkRole = (roles) => {
 };
 
 const authenticateAdmin = (req, res, next) => {
-  if (!req.session || !req.session.isAdmin) {
-    return res.status(401).json({ message: 'Admin authentication required' });
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Admin authentication required' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    
+    if (!decoded.isAdmin) {
+      return res.status(401).json({ message: 'Admin authentication required' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Admin auth error:', error);
+    res.status(401).json({ message: 'Admin authentication required' });
   }
-  next();
 };
 
 module.exports = { auth, checkRole, authenticateAdmin };
