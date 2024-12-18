@@ -48,14 +48,16 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for:', email);
 
     // Validate input
     if (!email || !password) {
       return res.status(400).json({ message: 'Email dan password harus diisi' });
     }
 
-    // Explicitly select the password field
-    const user = await User.findOne({ email }).select('+password');
+    // Explicitly select the password and active fields
+    const user = await User.findOne({ email }).select('+password +active');
+    console.log('Found user:', user ? { email: user.email, active: user.active } : null);
     
     // Use the same error message for both cases to prevent user enumeration
     if (!user || !(await user.comparePassword(password))) {
@@ -63,7 +65,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if account is deactivated after successful password check
-    if (!user.active) {
+    if (user.active === false) {
+      console.log('User account is deactivated:', email);
       return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.' });
     }
 

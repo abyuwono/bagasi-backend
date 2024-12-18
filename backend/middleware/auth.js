@@ -4,6 +4,7 @@ const User = require('../models/User');
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
+    console.log('Auth middleware token:', token ? 'present' : 'missing');
     
     if (!token) {
       return res.status(401).json({ message: 'Authentication required' });
@@ -11,12 +12,14 @@ const auth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('+active');
+    console.log('Auth middleware user:', user ? { id: user._id, email: user.email, active: user.active } : null);
 
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    if (!user.active) {
+    if (user.active === false) {
+      console.log('Auth middleware: User is deactivated');
       return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.' });
     }
 
