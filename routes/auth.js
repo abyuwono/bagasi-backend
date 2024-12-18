@@ -119,4 +119,18 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+// Logout
+router.post('/logout', async (req, res) => {
+  try {
+    // Reset any session data
+    if (req.session) {
+      req.session.destroy();
+    }
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ message: 'Error during logout' });
+  }
+});
+
 module.exports = router;
