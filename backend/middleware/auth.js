@@ -16,7 +16,8 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    if (!user.active) {
+    // Allow deactivated accounts to access /me endpoint
+    if (!user.active && req.path !== '/me') {
       return res.status(403).json({ message: 'Account is deactivated' });
     }
 

@@ -94,7 +94,20 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
+    res.json({
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        whatsappNumber: user.whatsappNumber,
+        membership: user.membership,
+        isVerified: user.isVerified,
+        username: user.username,
+        rating: user.rating,
+        totalReviews: user.totalReviews,
+        active: user.active
+      }
+    });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ message: 'Error fetching user', error: error.message });
