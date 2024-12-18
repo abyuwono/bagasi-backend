@@ -8,8 +8,14 @@ const { generateAuthenticationOptions, verifyAuthenticationResponse } = require(
 // Admin authentication endpoints
 router.post('/auth/generate-auth-options', async (req, res) => {
   try {
+    // Check if session is available
+    if (!req.session) {
+      console.error('Session not available');
+      return res.status(500).json({ error: 'Session not available' });
+    }
+
     const options = await generateAuthenticationOptions({
-      rpID: process.env.RP_ID || 'market.bagasi.id',
+      rpID: 'api.bagasi.id',
       allowCredentials: [], // Add stored credentials
       userVerification: 'preferred',
       timeout: 60000,
@@ -18,10 +24,17 @@ router.post('/auth/generate-auth-options', async (req, res) => {
     // Store challenge for verification
     req.session.challenge = options.challenge;
     
+    // Log successful options generation
+    console.log('Generated auth options:', { 
+      rpID: options.rp.id,
+      timeout: options.timeout,
+      challenge: options.challenge 
+    });
+    
     res.json(options);
   } catch (error) {
     console.error('Auth options error:', error);
-    res.status(500).json({ error: 'Failed to generate authentication options' });
+    res.status(500).json({ error: error.message || 'Failed to generate authentication options' });
   }
 });
 
@@ -30,11 +43,16 @@ router.post('/auth/verify', async (req, res) => {
     const { credential } = req.body;
     const expectedChallenge = req.session.challenge;
     
+    if (!expectedChallenge) {
+      console.error('No challenge found in session');
+      return res.status(400).json({ error: 'No challenge found' });
+    }
+    
     const verification = await verifyAuthenticationResponse({
       credential,
       expectedChallenge,
-      expectedOrigin: process.env.ORIGIN || 'https://market.bagasi.id',
-      expectedRPID: process.env.RP_ID || 'market.bagasi.id',
+      expectedOrigin: 'https://market.bagasi.id',
+      expectedRPID: 'api.bagasi.id',
     });
     
     if (verification.verified) {
