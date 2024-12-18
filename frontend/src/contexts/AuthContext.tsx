@@ -26,12 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return response;
     } catch (error: any) {
       console.error('Auth state check failed:', error.message);
-      // Keep user state if account is deactivated
-      if (error.name === 'DeactivatedAccountError') {
-        setIsAuthenticated(true);
-        return;
-      }
-      // Clear state for other errors
+      // Clear state for auth errors
       setUser(null);
       setIsAuthenticated(false);
       throw error;

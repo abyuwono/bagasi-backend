@@ -104,11 +104,10 @@ export const auth = {
       console.log('Making auth check request with token');
       const response = await api.get('/auth/me');
       
-      // If account is deactivated, throw a specific error
+      // If account is deactivated, still return the user data
       if (response.data.user && response.data.user.active === false) {
-        const error = new Error('Account is deactivated');
-        error.name = 'DeactivatedAccountError';
-        throw error;
+        console.log('Account is deactivated but returning user data');
+        return response.data;
       }
       
       console.log('Auth check successful:', response.data);

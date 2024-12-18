@@ -1,5 +1,9 @@
 const bcrypt = require('bcryptjs');
 
+const hashPassword = async (password) => {
+  return await bcrypt.hash(password, 10);
+};
+
 const users = [
   {
     email: 'john@example.com',
@@ -10,7 +14,6 @@ const users = [
     rating: 4.5,
     totalReviews: 15,
     isVerified: true,
-    active: true,
     membership: {
       type: 'none'
     }
@@ -24,10 +27,9 @@ const users = [
     rating: 4.8,
     totalReviews: 42,
     isVerified: true,
-    active: true,
     membership: {
       type: 'shopper',
-      validUntil: new Date('2024-12-31')
+      expiresAt: new Date('2024-12-31')
     }
   },
   {
@@ -39,7 +41,6 @@ const users = [
     rating: 4.2,
     totalReviews: 8,
     isVerified: true,
-    active: true,
     membership: {
       type: 'none'
     }
@@ -53,7 +54,6 @@ const users = [
     rating: 4.9,
     totalReviews: 25,
     isVerified: true,
-    active: true,
     membership: {
       type: 'none'
     }
@@ -67,105 +67,102 @@ const users = [
     rating: 4.7,
     totalReviews: 18,
     isVerified: true,
-    active: true,
     membership: {
       type: 'none'
     }
   }
 ];
 
+// Helper function to create dates relative to current time
+const createDate = (daysFromNow) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return date;
+};
+
 const ads = [
   {
-    departureCity: 'Sydney',
-    arrivalCity: 'Jakarta',
-    departureDate: new Date('2024-12-25'),
-    expiresAt: new Date('2024-12-24'),
-    pricePerKg: 15,
-    currency: 'AUD',
-    availableWeight: 10,
-    additionalNotes: 'Christmas Day flight, can carry gifts and non-perishables',
-    status: 'active'
-  },
-  {
-    departureCity: 'Melbourne',
-    arrivalCity: 'Bali',
-    departureDate: new Date('2024-12-30'),
-    expiresAt: new Date('2024-12-29'),
-    pricePerKg: 18,
-    currency: 'AUD',
+    departureCity: 'Jakarta',
+    arrivalCity: 'Singapore',
+    departureDate: createDate(5),
+    returnDate: createDate(7),
     availableWeight: 15,
-    additionalNotes: 'New Year flight, perfect for holiday packages',
-    status: 'active'
+    pricePerKg: 150000,
+    additionalNotes: 'Direct flight. Can carry food items and electronics.',
+    status: 'active',
+    currency: 'IDR',
+    airline: 'Singapore Airlines',
+    flightNumber: 'SQ953',
+    departureTime: '08:00',
+    expiresAt: createDate(4)
   },
   {
-    departureCity: 'Brisbane',
-    arrivalCity: 'Surabaya',
-    departureDate: new Date('2025-01-05'),
-    expiresAt: new Date('2025-01-04'),
-    pricePerKg: 20,
-    currency: 'AUD',
-    availableWeight: 12,
-    additionalNotes: 'Direct flight, can carry electronics and general items',
-    status: 'active'
-  },
-  {
-    departureCity: 'Perth',
-    arrivalCity: 'Yogyakarta',
-    departureDate: new Date('2025-01-10'),
-    expiresAt: new Date('2025-01-09'),
-    pricePerKg: 17,
-    currency: 'AUD',
+    departureCity: 'Surabaya',
+    arrivalCity: 'Kuala Lumpur',
+    departureDate: createDate(3),
+    returnDate: createDate(6),
     availableWeight: 20,
-    additionalNotes: 'Transit in Jakarta, large luggage space available',
-    status: 'active'
+    pricePerKg: 120000,
+    additionalNotes: 'No liquids or fragile items.',
+    status: 'active',
+    currency: 'IDR',
+    airline: 'AirAsia',
+    flightNumber: 'AK365',
+    departureTime: '10:30',
+    expiresAt: createDate(2)
   },
   {
-    departureCity: 'Adelaide',
-    arrivalCity: 'Bandung',
-    departureDate: new Date('2025-01-15'),
-    expiresAt: new Date('2025-01-14'),
-    pricePerKg: 19,
-    currency: 'AUD',
-    availableWeight: 18,
-    additionalNotes: 'Transit in Jakarta, all items welcome except fragile',
-    status: 'active'
+    departureCity: 'Bali',
+    arrivalCity: 'Singapore',
+    departureDate: createDate(7),
+    returnDate: createDate(10),
+    availableWeight: 25,
+    pricePerKg: 180000,
+    additionalNotes: 'Can carry all types of items except perishables.',
+    status: 'active',
+    currency: 'IDR',
+    airline: 'Garuda Indonesia',
+    flightNumber: 'GA846',
+    departureTime: '13:45',
+    expiresAt: createDate(6)
+  },
+  {
+    departureCity: 'Medan',
+    arrivalCity: 'Kuala Lumpur',
+    departureDate: createDate(4),
+    returnDate: createDate(8),
+    availableWeight: 10,
+    pricePerKg: 140000,
+    additionalNotes: 'Small items only. No food items.',
+    status: 'active',
+    currency: 'IDR',
+    airline: 'Malaysia Airlines',
+    flightNumber: 'MH860',
+    departureTime: '15:20',
+    expiresAt: createDate(3)
   }
 ];
 
 const bookings = [
   {
-    weight: 3,
-    status: 'pending'
-  },
-  {
-    weight: 5,
-    status: 'confirmed'
-  },
-  {
-    weight: 2,
-    status: 'cancelled'
+    weight: 8,
+    totalPrice: 960000,
+    status: 'confirmed',
+    notes: 'Please handle with care',
+    createdAt: new Date(),
   }
 ];
 
 const transactions = [
   {
-    type: 'ad_posting',
-    amount: 10,
-    status: 'completed',
-    stripePaymentIntentId: 'pi_mock_1'
-  },
-  {
     type: 'membership',
-    amount: 50,
+    amount: 299000,
     status: 'completed',
-    stripePaymentIntentId: 'pi_mock_2',
-    membershipDuration: 3
+    createdAt: new Date(),
+    stripePaymentIntentId: 'pi_mock_1234567890',
+    membershipDuration: 30
   }
 ];
-
-const hashPassword = async (password) => {
-  return await bcrypt.hash(password, 10);
-};
 
 module.exports = {
   users,
