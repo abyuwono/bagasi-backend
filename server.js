@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const adRoutes = require('./routes/ads');
 const paymentRoutes = require('./routes/payments');
 const adminRoutes = require('./routes/admin');
+const otpRoutes = require('./routes/otp');
 
 const app = express();
 
@@ -102,6 +103,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ads', adRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/otp', otpRoutes);
 
 // MongoDB connection with fallback to local
 const connectDB = async () => {
