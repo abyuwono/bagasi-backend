@@ -53,10 +53,17 @@ router.post('/auth/login', async (req, res) => {
 // User management endpoints
 router.get('/users', authenticateAdmin, async (req, res) => {
   try {
-    const users = await User.find({}, '-password');
+    const users = await User.find({})
+      .select('username email whatsapp rating totalReviews isVerified createdAt');
+    
+    if (!users) {
+      return res.status(404).json({ message: 'No users found' });
+    }
+    
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch users' });
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
