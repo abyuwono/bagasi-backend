@@ -54,7 +54,7 @@ router.post('/auth/login', async (req, res) => {
 router.get('/users', authenticateAdmin, async (req, res) => {
   try {
     const users = await User.find({})
-      .select('username email whatsapp rating totalReviews isVerified createdAt');
+      .select('username email whatsappNumber rating totalReviews isVerified createdAt');
     
     if (!users) {
       return res.status(404).json({ message: 'No users found' });
