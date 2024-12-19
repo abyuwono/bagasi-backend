@@ -142,6 +142,26 @@ router.patch('/users/:userId/whatsapp', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Set user active status directly
+router.post('/users/set-active', authenticateAdmin, async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.isActive = true;
+    await user.save();
+
+    res.json({ success: true, message: 'User activated successfully' });
+  } catch (error) {
+    console.error('Error setting user active:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Ad management endpoints
 router.get('/ads', authenticateAdmin, async (req, res) => {
   try {
