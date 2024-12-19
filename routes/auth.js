@@ -55,11 +55,20 @@ router.post('/login', async (req, res) => {
     }
 
     // Explicitly select the password field
-    const user = await User.findOne({ email }).select('+password +active');
+    const user = await User.findOne({ email }).select('+password +active +isActive');
     
     // Use the same error message for both cases to prevent user enumeration
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ message: 'Email atau password salah' });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'Account is inactive' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Check if account is deactivated after successful password check
@@ -67,8 +76,8 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.' });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d',
+    const token = jwt.sign({ userId: user._id, isAdmin: user.role === 'admin' }, process.env.JWT_SECRET, {
+      expiresIn: '24h',
     });
 
     // Remove password from response

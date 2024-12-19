@@ -54,7 +54,7 @@ router.post('/auth/login', async (req, res) => {
 router.get('/users', authenticateAdmin, async (req, res) => {
   try {
     const users = await User.find({})
-      .select('username email whatsappNumber rating totalReviews isVerified createdAt');
+      .select('username email whatsappNumber rating totalReviews isVerified isActive createdAt');
     
     if (!users) {
       return res.status(404).json({ message: 'No users found' });
@@ -63,6 +63,23 @@ router.get('/users', authenticateAdmin, async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/users/:userId/toggle-active', authenticateAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    res.json({ isActive: user.isActive });
+  } catch (error) {
+    console.error('Error toggling user active status:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
