@@ -67,6 +67,23 @@ router.get('/users', authenticateAdmin, async (req, res) => {
   }
 });
 
+router.post('/users/:userId/toggle-verification', authenticateAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.isVerified = !user.isVerified;
+    await user.save();
+
+    res.json({ isVerified: user.isVerified });
+  } catch (error) {
+    console.error('Error toggling user verification:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.post('/users/:userId/toggle-active', authenticateAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
