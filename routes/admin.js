@@ -191,6 +191,28 @@ router.get('/ads', authenticateAdmin, async (req, res) => {
   }
 });
 
+router.put('/ads/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const updatedAd = await Ad.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true }
+    );
+
+    if (!updatedAd) {
+      return res.status(404).json({ message: 'Ad not found' });
+    }
+
+    res.json(updatedAd);
+  } catch (error) {
+    console.error('Error updating ad:', error);
+    res.status(500).json({ message: 'Error updating ad' });
+  }
+});
+
 router.patch('/ads/:adId/status', authenticateAdmin, async (req, res) => {
   try {
     const { adId } = req.params;
