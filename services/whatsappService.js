@@ -4,7 +4,7 @@ const sendWhatsAppOTP = async (phoneNumber, otp) => {
   try {
     const userkey = process.env.ZENZIVA_USERKEY;
     const passkey = process.env.ZENZIVA_PASSKEY;
-    const imageLink = 'https://www.imghippo.com/i/G1400HGQ.png';
+    const imageLink = 'https://i.imghippo.com/files/G1400HGQ.png';
     const caption = `Kode OTP Bagasi: ${otp}\n\nMasukkan kode OTP ini untuk verifikasi nomor WhatsApp Anda.\nKode OTP berlaku selama 5 menit.\n\nJangan bagikan kode ini kepada siapapun.`;
 
     const response = await axios.post('https://console.zenziva.net/wareguler/api/sendWAFile/', 
