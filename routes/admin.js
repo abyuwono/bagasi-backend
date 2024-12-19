@@ -53,16 +53,21 @@ router.post('/auth/login', async (req, res) => {
 // User management endpoints
 router.get('/users', authenticateAdmin, async (req, res) => {
   try {
-    const users = await User.find({})
-      .select('username email whatsappNumber rating totalReviews isVerified isActive createdAt');
-    
-    if (!users) {
-      return res.status(404).json({ message: 'No users found' });
-    }
-    
+    const users = await User.find({}, {
+      _id: 1,
+      email: 1,
+      firstName: 1,
+      lastName: 1,
+      whatsappNumber: 1,
+      isActive: 1,
+      isVerified: 1,
+      isAdmin: 1,
+      createdAt: 1,
+      updatedAt: 1
+    });
     res.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error getting users:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
