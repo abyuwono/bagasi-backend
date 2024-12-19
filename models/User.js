@@ -55,14 +55,18 @@ const userSchema = new mongoose.Schema({
     min: 0,
     max: 5
   },
+  totalReviews: {
+    type: Number,
+    default: 0
+  },
+  reviews: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Review'
+  }],
   active: {
     type: Boolean,
     default: true,
     required: true
-  },
-  totalReviews: {
-    type: Number,
-    default: 0
   },
   createdAt: {
     type: Date,

@@ -56,12 +56,16 @@ router.get('/users', authenticateAdmin, async (req, res) => {
     const users = await User.find({}, {
       _id: 1,
       email: 1,
+      username: 1,
       firstName: 1,
       lastName: 1,
       whatsappNumber: 1,
       isActive: 1,
       isVerified: 1,
       isAdmin: 1,
+      rating: 1,
+      reviews: 1,
+      totalReviews: 1,
       createdAt: 1,
       updatedAt: 1
     });
