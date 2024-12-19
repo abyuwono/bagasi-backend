@@ -16,6 +16,10 @@ const adSchema = new mongoose.Schema({
     max: 5,
     default: undefined
   },
+  customWhatsapp: {
+    type: String,
+    default: undefined
+  },
   departureCity: {
     type: String,
     required: true,
