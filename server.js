@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const session = require('express-session');
+const helmet = require('helmet');
 const authRoutes = require('./routes/auth');
 const adRoutes = require('./routes/ads');
 const paymentRoutes = require('./routes/payments');
@@ -68,11 +69,12 @@ app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self' https://api.bagasi.id; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://m.stripe.network https://m.stripe.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://m.stripe.network https://m.stripe.com https://www.googletagmanager.com https://www.google-analytics.com; " +
+    "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
-    "img-src 'self' data: https://*.stripe.com; " +
-    "connect-src 'self' https://api.bagasi.id https://api.stripe.com https://m.stripe.network https://m.stripe.com; " +
+    "img-src 'self' data: https://*.stripe.com https://www.google-analytics.com; " +
+    "connect-src 'self' https://api.bagasi.id https://api.stripe.com https://m.stripe.network https://m.stripe.com https://www.google-analytics.com https://analytics.google.com; " +
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
     "worker-src 'self' blob:;"
   );
