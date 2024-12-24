@@ -1,13 +1,18 @@
-const { Verify2Client } = require('@vonage/verify2');
+const { Auth } = require('@vonage/auth');
+const { Vonage } = require('@vonage/server-sdk');
+const { Verify2 } = require('@vonage/verify2');
 
-const client = new Verify2Client({
+const credentials = {
   apiKey: process.env.VONAGE_API_KEY,
   apiSecret: process.env.VONAGE_API_SECRET
-});
+};
+
+const vonage = new Vonage(credentials);
+const verify2 = new Verify2(credentials);
 
 const sendVonageOTP = async (phoneNumber) => {
   try {
-    const response = await client.newRequest({
+    const response = await verify2.newRequest({
       brand: "BAGASI",
       workflow: [
         {
@@ -25,7 +30,7 @@ const sendVonageOTP = async (phoneNumber) => {
 
 const verifyVonageOTP = async (requestId, code) => {
   try {
-    const response = await client.checkCode(requestId, code);
+    const response = await verify2.checkCode(requestId, code);
     return response;
   } catch (error) {
     console.error('Vonage verify error:', error);
