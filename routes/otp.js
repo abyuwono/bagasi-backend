@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { sendOTPEmail } = require('../services/emailService');
 const { sendWhatsAppOTP } = require('../services/whatsappService');
+const { sendVonageOTP, verifyVonageOTP } = require('../services/vonageService');
 const User = require('../models/User'); 
 
 // Store OTPs temporarily (in production, use Redis or similar)
@@ -13,9 +14,10 @@ const generateOTP = () => {
 };
 
 // Save OTP to store
-const saveOTP = async (key, otp) => {
+const saveOTP = async (key, otp, requestId = null) => {
   otpStore.set(key, {
     otp,
+    requestId,
     expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
   });
   setTimeout(() => {
@@ -43,7 +45,7 @@ router.post('/send', async (req, res) => {
   }
 });
 
-// Send WhatsApp OTP
+// Send WhatsApp/SMS OTP
 router.post('/send-whatsapp', async (req, res) => {
   try {
     const { phoneNumber } = req.body;
@@ -54,9 +56,18 @@ router.post('/send-whatsapp', async (req, res) => {
       return res.status(409).json({ message: 'Nomor WhatsApp sudah terdaftar. Silahkan login atau gunakan nomor lain.' });
     }
 
-    const otp = generateOTP();
-    await saveOTP(phoneNumber, otp);
-    await sendWhatsAppOTP(phoneNumber, otp);
+    // Check if it's an Indonesian number
+    if (phoneNumber.startsWith('+62')) {
+      // Use Zenziva for Indonesian numbers
+      const otp = generateOTP();
+      await saveOTP(phoneNumber, otp);
+      await sendWhatsAppOTP(phoneNumber, otp);
+    } else {
+      // Use Vonage for international numbers
+      const response = await sendVonageOTP(phoneNumber);
+      await saveOTP(phoneNumber, null, response.request_id);
+    }
+
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to send OTP', error: error.message });
@@ -70,8 +81,19 @@ router.post('/verify', async (req, res) => {
     const key = email || phoneNumber;
     const storedData = otpStore.get(key);
 
-    if (!storedData || storedData.otp !== otp || Date.now() > storedData.expiresAt) {
+    if (!storedData || Date.now() > storedData.expiresAt) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    if (phoneNumber && !phoneNumber.startsWith('+62') && storedData.requestId) {
+      // Verify Vonage OTP
+      try {
+        await verifyVonageOTP(storedData.requestId, otp);
+      } catch (error) {
+        return res.status(400).json({ message: 'Invalid OTP' });
+      }
+    } else if (!storedData.otp || storedData.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP' });
     }
 
     otpStore.delete(key);
@@ -101,9 +123,9 @@ router.post('/check-phone', async (req, res) => {
     const { phoneNumber } = req.body;
     const existingUser = await User.findOne({ whatsappNumber: phoneNumber });
     if (existingUser) {
-      return res.status(409).json({ message: 'Nomor WhatsApp sudah terdaftar. Silahkan login atau gunakan nomor lain.' });
+      return res.status(409).json({ message: 'Nomor WhatsApp sudah terdaftar' });
     }
-    res.status(200).json({ message: 'Nomor tersedia' });
+    res.status(200).json({ message: 'Nomor WhatsApp tersedia' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
