@@ -70,7 +70,13 @@ router.post('/send-whatsapp', async (req, res) => {
       // Use Vonage for international numbers
       const response = await sendVonageOTP(phoneNumber);
       console.log('[OTP] Vonage response:', response);
+      
+      if (!response || !response.request_id) {
+        throw new Error('Invalid Vonage response');
+      }
+      
       await saveOTP(phoneNumber, null, response.request_id);
+      console.log('[OTP] Saved with request_id:', response.request_id);
     }
 
     res.status(200).json({ message: 'OTP sent successfully' });

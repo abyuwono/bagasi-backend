@@ -24,8 +24,13 @@ const sendVonageOTP = async (phoneNumber) => {
         }
       ]
     });
-    console.log('[Vonage] Send OTP response:', response);
-    return response;
+    console.log('[Vonage] Full response:', JSON.stringify(response));
+    
+    // Extract request_id from response
+    const requestId = response && (response.request_id || response.requestId);
+    console.log('[Vonage] Extracted request_id:', requestId);
+    
+    return { request_id: requestId };
   } catch (error) {
     if (error.response?.status === 409) {
       console.log('[Vonage] Conflict error - OTP already sent');
@@ -52,7 +57,7 @@ const verifyVonageOTP = async (requestId, code) => {
 
     try {
       const response = await verify2.checkCode(requestId, code);
-      console.log('[Vonage] Verify response:', response);
+      console.log('[Vonage] Verify response:', JSON.stringify(response));
       
       if (!response) {
         console.log('[Vonage] Empty response from verify');
