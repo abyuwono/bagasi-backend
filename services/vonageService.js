@@ -14,22 +14,6 @@ const verify2 = new Verify2(credentials);
 
 const sendVonageOTP = async (phoneNumber) => {
   try {
-    // Try to get active verification for this number
-    try {
-      const activeVerifications = await verify2.search({ to: phoneNumber });
-      if (activeVerifications && activeVerifications.length > 0) {
-        // Cancel the active verification
-        for (const verification of activeVerifications) {
-          if (verification.status !== 'COMPLETED' && verification.status !== 'CANCELLED') {
-            await verify2.cancel(verification.request_id);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Error checking/canceling active verifications:', error);
-    }
-
-    // Create new verification request
     const response = await verify2.newRequest({
       brand: "BAGASI",
       workflow: [
@@ -41,6 +25,10 @@ const sendVonageOTP = async (phoneNumber) => {
     });
     return response;
   } catch (error) {
+    if (error.response?.status === 409) {
+      // If there's a conflict, just return success so the user can use the existing OTP
+      return { request_id: 'existing' };
+    }
     console.error('Vonage OTP error:', error);
     throw error;
   }
@@ -48,6 +36,20 @@ const sendVonageOTP = async (phoneNumber) => {
 
 const verifyVonageOTP = async (requestId, code) => {
   try {
+    if (requestId === 'existing') {
+      // For existing OTP requests, just try to verify
+      try {
+        const response = await verify2.checkCode({
+          request_id: requestId,
+          code: code
+        });
+        return response.status === 'COMPLETED';
+      } catch (error) {
+        console.error('Vonage verify error:', error);
+        return false;
+      }
+    }
+
     const response = await verify2.checkCode({
       request_id: requestId,
       code: code
