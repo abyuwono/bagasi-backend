@@ -70,13 +70,7 @@ router.post('/send-whatsapp', async (req, res) => {
       // Use Vonage for international numbers
       const response = await sendVonageOTP(phoneNumber);
       console.log('[OTP] Vonage response:', response);
-      if (response && response.request_id) {
-        await saveOTP(phoneNumber, null, response.request_id);
-        console.log('[OTP] Saved Vonage request ID:', response.request_id);
-      } else {
-        console.error('[OTP] No request_id in Vonage response:', response);
-        return res.status(500).json({ message: 'Failed to get OTP request ID' });
-      }
+      await saveOTP(phoneNumber, null, response.request_id);
     }
 
     res.status(200).json({ message: 'OTP sent successfully' });
@@ -95,6 +89,7 @@ router.post('/verify', async (req, res) => {
 
     console.log('[OTP] Verifying OTP for:', key);
     console.log('[OTP] Stored data:', storedData);
+    console.log('[OTP] Received OTP:', otp);
 
     if (!storedData || Date.now() > storedData.expiresAt) {
       console.log('[OTP] Invalid or expired OTP - No stored data or expired');
