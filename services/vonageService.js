@@ -64,8 +64,11 @@ const verifyVonageOTP = async (requestId, code) => {
         return false;
       }
       
-      console.log('[Vonage] Verify status:', response.status);
-      return response.status === 'COMPLETED';
+      // Handle both object and string response formats
+      const status = typeof response === 'string' ? response : response.status;
+      console.log('[Vonage] Verify status:', status);
+      
+      return status === 'COMPLETED' || status === 'completed';
     } catch (error) {
       console.error('[Vonage] Verify error:', error);
       return false;
