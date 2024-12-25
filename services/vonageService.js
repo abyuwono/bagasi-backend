@@ -14,6 +14,22 @@ const verify2 = new Verify2(credentials);
 
 const sendVonageOTP = async (phoneNumber) => {
   try {
+    // Try to get active verification for this number
+    try {
+      const activeVerifications = await verify2.search({ to: phoneNumber });
+      if (activeVerifications && activeVerifications.length > 0) {
+        // Cancel the active verification
+        for (const verification of activeVerifications) {
+          if (verification.status !== 'COMPLETED' && verification.status !== 'CANCELLED') {
+            await verify2.cancel(verification.request_id);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Error checking/canceling active verifications:', error);
+    }
+
+    // Create new verification request
     const response = await verify2.newRequest({
       brand: "BAGASI",
       workflow: [
