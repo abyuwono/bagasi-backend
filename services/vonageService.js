@@ -37,24 +37,16 @@ const sendVonageOTP = async (phoneNumber) => {
 const verifyVonageOTP = async (requestId, code) => {
   try {
     if (requestId === 'existing') {
-      // For existing OTP requests, just try to verify
-      try {
-        const response = await verify2.checkCode({
-          request_id: requestId,
-          code: code
-        });
-        return response.status === 'COMPLETED';
-      } catch (error) {
-        console.error('Vonage verify error:', error);
-        return false;
-      }
+      return false;
     }
 
-    const response = await verify2.checkCode({
-      request_id: requestId,
-      code: code
-    });
-    return response.status === 'COMPLETED';
+    try {
+      const response = await verify2.checkCode(requestId, code);
+      return response && response.status === 'COMPLETED';
+    } catch (error) {
+      console.error('Vonage verify error:', error);
+      return false;
+    }
   } catch (error) {
     console.error('Vonage verify error:', error);
     return false;
