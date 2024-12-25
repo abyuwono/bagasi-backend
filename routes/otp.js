@@ -81,24 +81,31 @@ router.post('/verify', async (req, res) => {
     const key = email || phoneNumber;
     const storedData = otpStore.get(key);
 
+    console.log('[OTP] Verifying OTP for:', key);
+    console.log('[OTP] Stored data:', storedData);
+
     if (!storedData || Date.now() > storedData.expiresAt) {
+      console.log('[OTP] Invalid or expired OTP - No stored data or expired');
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
     if (phoneNumber && !phoneNumber.startsWith('+62') && storedData.requestId) {
-      // Verify Vonage OTP
+      console.log('[OTP] Using Vonage verification');
       const isValid = await verifyVonageOTP(storedData.requestId, otp);
       if (!isValid) {
+        console.log('[OTP] Invalid Vonage OTP');
         return res.status(400).json({ message: 'Invalid OTP' });
       }
     } else if (!storedData.otp || storedData.otp !== otp) {
+      console.log('[OTP] Invalid local OTP');
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
     otpStore.delete(key);
+    console.log('[OTP] Verification successful');
     res.json({ message: 'OTP verified successfully' });
   } catch (error) {
-    console.error('OTP verification error:', error);
+    console.error('[OTP] Verification error:', error);
     res.status(500).json({ message: 'Failed to verify OTP', error: error.message });
   }
 });

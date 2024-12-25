@@ -14,6 +14,7 @@ const verify2 = new Verify2(credentials);
 
 const sendVonageOTP = async (phoneNumber) => {
   try {
+    console.log('[Vonage] Sending OTP to:', phoneNumber);
     const response = await verify2.newRequest({
       brand: "BAGASI",
       workflow: [
@@ -23,32 +24,46 @@ const sendVonageOTP = async (phoneNumber) => {
         }
       ]
     });
+    console.log('[Vonage] Send OTP response:', JSON.stringify(response, null, 2));
     return response;
   } catch (error) {
     if (error.response?.status === 409) {
-      // If there's a conflict, just return success so the user can use the existing OTP
+      console.log('[Vonage] Conflict error - OTP already sent');
       return { request_id: 'existing' };
     }
-    console.error('Vonage OTP error:', error);
+    console.error('[Vonage] Send OTP error:', error);
+    console.error('[Vonage] Error response:', error.response?.data);
     throw error;
   }
 };
 
 const verifyVonageOTP = async (requestId, code) => {
   try {
+    console.log('[Vonage] Verifying OTP - Request ID:', requestId, 'Code:', code);
+    
     if (requestId === 'existing') {
+      console.log('[Vonage] Cannot verify with existing request ID');
       return false;
     }
 
     try {
       const response = await verify2.checkCode(requestId, code);
-      return response && response.status === 'COMPLETED';
+      console.log('[Vonage] Verify response:', JSON.stringify(response, null, 2));
+      
+      if (!response) {
+        console.log('[Vonage] Empty response from verify');
+        return false;
+      }
+      
+      console.log('[Vonage] Verify status:', response.status);
+      return response.status === 'COMPLETED';
     } catch (error) {
-      console.error('Vonage verify error:', error);
+      console.error('[Vonage] Verify error:', error);
+      console.error('[Vonage] Error response:', error.response?.data);
       return false;
     }
   } catch (error) {
-    console.error('Vonage verify error:', error);
+    console.error('[Vonage] Outer verify error:', error);
     return false;
   }
 };
