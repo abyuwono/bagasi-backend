@@ -4,7 +4,8 @@ const { Verify2 } = require('@vonage/verify2');
 
 const credentials = {
   apiKey: process.env.VONAGE_API_KEY,
-  apiSecret: process.env.VONAGE_API_SECRET
+  apiSecret: process.env.VONAGE_API_SECRET,
+  applicationId: process.env.VONAGE_APPLICATION_ID
 };
 
 const vonage = new Vonage(credentials);
