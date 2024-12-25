@@ -87,9 +87,8 @@ router.post('/verify', async (req, res) => {
 
     if (phoneNumber && !phoneNumber.startsWith('+62') && storedData.requestId) {
       // Verify Vonage OTP
-      try {
-        await verifyVonageOTP(storedData.requestId, otp);
-      } catch (error) {
+      const isValid = await verifyVonageOTP(storedData.requestId, otp);
+      if (!isValid) {
         return res.status(400).json({ message: 'Invalid OTP' });
       }
     } else if (!storedData.otp || storedData.otp !== otp) {
@@ -99,6 +98,7 @@ router.post('/verify', async (req, res) => {
     otpStore.delete(key);
     res.json({ message: 'OTP verified successfully' });
   } catch (error) {
+    console.error('OTP verification error:', error);
     res.status(500).json({ message: 'Failed to verify OTP', error: error.message });
   }
 });

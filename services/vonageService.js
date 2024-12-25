@@ -32,11 +32,14 @@ const sendVonageOTP = async (phoneNumber) => {
 
 const verifyVonageOTP = async (requestId, code) => {
   try {
-    const response = await verify2.checkCode(requestId, code);
-    return response;
+    const response = await verify2.checkCode({
+      request_id: requestId,
+      code: code
+    });
+    return response.status === 'COMPLETED';
   } catch (error) {
     console.error('Vonage verify error:', error);
-    throw error;
+    return false;
   }
 };
 
