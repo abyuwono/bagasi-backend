@@ -15,14 +15,11 @@ const generateOTP = () => {
 
 // Save OTP to store
 const saveOTP = async (key, otp, requestId = null) => {
-  console.log('[OTP] Saving OTP data:', { key, otp, requestId });
   otpStore.set(key, {
     otp,
     requestId,
     expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
   });
-  const stored = otpStore.get(key);
-  console.log('[OTP] Stored data:', stored);
   setTimeout(() => {
     otpStore.delete(key);
   }, 5 * 60 * 1000);
@@ -36,7 +33,7 @@ router.post('/send', async (req, res) => {
     // Check if email exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ message: 'Email sudah terdaftar' });
+      return res.status(409).json({ message: 'Email sudah terdaftar. Silahkan login atau gunakan email lain.' });
     }
 
     const otp = generateOTP();
@@ -44,7 +41,6 @@ router.post('/send', async (req, res) => {
     await sendOTPEmail(email, otp);
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
-    console.error('[OTP] Send error:', error);
     res.status(500).json({ message: 'Failed to send OTP', error: error.message });
   }
 });
@@ -69,19 +65,14 @@ router.post('/send-whatsapp', async (req, res) => {
     } else {
       // Use Vonage for international numbers
       const response = await sendVonageOTP(phoneNumber);
-      console.log('[OTP] Vonage response:', response);
-      
       if (!response || !response.request_id) {
         throw new Error('Invalid Vonage response');
       }
-      
       await saveOTP(phoneNumber, null, response.request_id);
-      console.log('[OTP] Saved with request_id:', response.request_id);
     }
 
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
-    console.error('[OTP] Send error:', error);
     res.status(500).json({ message: 'Failed to send OTP', error: error.message });
   }
 });
@@ -93,36 +84,25 @@ router.post('/verify', async (req, res) => {
     const key = email || phoneNumber;
     const storedData = otpStore.get(key);
 
-    console.log('[OTP] Verifying OTP for:', key);
-    console.log('[OTP] Stored data:', storedData);
-    console.log('[OTP] Received OTP:', otp);
-
     if (!storedData || Date.now() > storedData.expiresAt) {
-      console.log('[OTP] Invalid or expired OTP - No stored data or expired');
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
     if (phoneNumber && !phoneNumber.startsWith('+62')) {
-      console.log('[OTP] Using Vonage verification with requestId:', storedData.requestId);
       if (!storedData.requestId) {
-        console.log('[OTP] No Vonage request ID found');
         return res.status(400).json({ message: 'Invalid OTP request' });
       }
       const isValid = await verifyVonageOTP(storedData.requestId, otp);
       if (!isValid) {
-        console.log('[OTP] Invalid Vonage OTP');
         return res.status(400).json({ message: 'Invalid OTP' });
       }
     } else if (!storedData.otp || storedData.otp !== otp) {
-      console.log('[OTP] Invalid local OTP');
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
     otpStore.delete(key);
-    console.log('[OTP] Verification successful');
     res.json({ message: 'OTP verified successfully' });
   } catch (error) {
-    console.error('[OTP] Verification error:', error);
     res.status(500).json({ message: 'Failed to verify OTP', error: error.message });
   }
 });
@@ -137,7 +117,6 @@ router.post('/check-email', async (req, res) => {
     }
     res.status(200).json({ message: 'Email tersedia' });
   } catch (error) {
-    console.error('[OTP] Check email error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -152,7 +131,6 @@ router.post('/check-phone', async (req, res) => {
     }
     res.status(200).json({ message: 'Nomor WhatsApp tersedia' });
   } catch (error) {
-    console.error('[OTP] Check phone error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
