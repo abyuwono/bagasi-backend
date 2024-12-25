@@ -65,6 +65,7 @@ router.post('/send-whatsapp', async (req, res) => {
     } else {
       // Use Vonage for international numbers
       const response = await sendVonageOTP(phoneNumber);
+      console.log('[OTP] Vonage response:', response);
       await saveOTP(phoneNumber, null, response.request_id);
     }
 
@@ -89,8 +90,12 @@ router.post('/verify', async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    if (phoneNumber && !phoneNumber.startsWith('+62') && storedData.requestId) {
-      console.log('[OTP] Using Vonage verification');
+    if (phoneNumber && !phoneNumber.startsWith('+62')) {
+      console.log('[OTP] Using Vonage verification with requestId:', storedData.requestId);
+      if (!storedData.requestId) {
+        console.log('[OTP] No Vonage request ID found');
+        return res.status(400).json({ message: 'Invalid OTP request' });
+      }
       const isValid = await verifyVonageOTP(storedData.requestId, otp);
       if (!isValid) {
         console.log('[OTP] Invalid Vonage OTP');
