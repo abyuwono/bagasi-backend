@@ -24,8 +24,15 @@ const sendVonageOTP = async (phoneNumber) => {
         }
       ]
     });
-    console.log('[Vonage] Send OTP response:', JSON.stringify(response, null, 2));
-    return response;
+    console.log('[Vonage] Raw response:', response);
+    const requestId = response?.request_id;
+    console.log('[Vonage] Extracted request_id:', requestId);
+    
+    if (!requestId) {
+      throw new Error('No request_id in Vonage response');
+    }
+    
+    return { request_id: requestId };
   } catch (error) {
     if (error.response?.status === 409) {
       console.log('[Vonage] Conflict error - OTP already sent');

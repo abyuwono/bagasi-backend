@@ -15,11 +15,14 @@ const generateOTP = () => {
 
 // Save OTP to store
 const saveOTP = async (key, otp, requestId = null) => {
+  console.log('[OTP] Saving OTP data:', { key, otp, requestId });
   otpStore.set(key, {
     otp,
     requestId,
     expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
   });
+  const stored = otpStore.get(key);
+  console.log('[OTP] Stored data:', stored);
   setTimeout(() => {
     otpStore.delete(key);
   }, 5 * 60 * 1000);
@@ -41,6 +44,7 @@ router.post('/send', async (req, res) => {
     await sendOTPEmail(email, otp);
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
+    console.error('[OTP] Send error:', error);
     res.status(500).json({ message: 'Failed to send OTP', error: error.message });
   }
 });
@@ -66,11 +70,18 @@ router.post('/send-whatsapp', async (req, res) => {
       // Use Vonage for international numbers
       const response = await sendVonageOTP(phoneNumber);
       console.log('[OTP] Vonage response:', response);
-      await saveOTP(phoneNumber, null, response.request_id);
+      if (response && response.request_id) {
+        await saveOTP(phoneNumber, null, response.request_id);
+        console.log('[OTP] Saved Vonage request ID:', response.request_id);
+      } else {
+        console.error('[OTP] No request_id in Vonage response:', response);
+        return res.status(500).json({ message: 'Failed to get OTP request ID' });
+      }
     }
 
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
+    console.error('[OTP] Send error:', error);
     res.status(500).json({ message: 'Failed to send OTP', error: error.message });
   }
 });
@@ -125,6 +136,7 @@ router.post('/check-email', async (req, res) => {
     }
     res.status(200).json({ message: 'Email tersedia' });
   } catch (error) {
+    console.error('[OTP] Check email error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -139,6 +151,7 @@ router.post('/check-phone', async (req, res) => {
     }
     res.status(200).json({ message: 'Nomor WhatsApp tersedia' });
   } catch (error) {
+    console.error('[OTP] Check phone error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
