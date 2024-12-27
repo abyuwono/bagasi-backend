@@ -85,7 +85,7 @@ router.get('/', async (req, res) => {
     const safeAds = ads.map(ad => {
       const adObj = ad.toObject();
       if (adObj.user) {
-        const { email, whatsappNumber, ...safeUser } = adObj.user;
+        const { email, whatsappNumber, customWhatsapp, ...safeUser } = adObj.user;
         adObj.user = safeUser;
       }
       return adObj;
@@ -120,7 +120,7 @@ router.get('/:id', async (req, res) => {
     // Transform data to ensure sensitive info is removed
     const safeAd = ad.toObject();
     if (safeAd.user) {
-      const { email, whatsappNumber, ...safeUser } = safeAd.user;
+      const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
       safeAd.user = safeUser;
     }
 
