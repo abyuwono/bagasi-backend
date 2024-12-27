@@ -23,6 +23,8 @@ router.post('/auth/login', async (req, res) => {
 
     // Verify password
     if (password !== ADMIN_PASSWORD) {
+      console.log(password);
+      console.log(ADMIN_PASSWORD);
       console.log('Invalid password'); // Log for debugging
       return res.status(401).json({ error: 'Invalid credentials' });
     }
