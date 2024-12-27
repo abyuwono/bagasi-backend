@@ -148,8 +148,7 @@ router.get('/:id', async (req, res) => {
         safeAd.user = safeUser;
       }
       // Also remove customWhatsapp from the ad itself
-      const { customWhatsapp, ...safeAdData } = safeAd;
-      Object.assign(safeAd, safeAdData);
+      delete safeAd.customWhatsapp;
     }
 
     res.json(safeAd);
