@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 
 // Admin credentials
 const ADMIN_USERNAME = 'administrator';
-const ADMIN_PASSWORD = '$2a$10$YzE2MTY4NmE1ZTc4MzJlZOIxPFR/q3D6LZ3QzuJjQweYQZn6Aqm/G'; // Media789
+const ADMIN_PASSWORD = '$2a$10$7UF3RvDx9h5KKYs1bkUFo.PNZxzXdYLPD8RF9JgZvkDULuR3zXAGu'; // Media789
 
 // Admin authentication endpoint
 router.post('/auth/login', async (req, res) => {
