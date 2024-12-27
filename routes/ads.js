@@ -112,7 +112,7 @@ router.get('/:id', async (req, res) => {
 
   try {
     const ad = await Ad.findById(req.params.id)
-      .populate('user', 'username rating totalReviews isVerified whatsappNumber customWhatsapp');
+      .populate('user', 'username rating totalReviews isVerified whatsappNumber');
     
     if (!ad) {
       return res.status(404).json({ message: 'ID Jasa Titipan tidak ditemukan atau telah kadaluarsa / expired' });
@@ -120,31 +120,34 @@ router.get('/:id', async (req, res) => {
     
     // Transform data to ensure sensitive info is removed
     const safeAd = ad.toObject();
-    if (safeAd.user) {
-      let shouldShowContact = false;
+    let shouldShowContact = false;
 
-      // Check if user has valid JWT token
-      const token = req.headers.authorization?.split(' ')[1];
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          const user = await User.findById(decoded.userId);
-          
-          // Only include contact info if user has active membership
-          if (user?.membership?.type && user.membership.type !== 'none' && 
-              (!user.membership.expiresAt || new Date(user.membership.expiresAt) > new Date())) {
-            shouldShowContact = true;
-          }
-        } catch (err) {
-          console.error('JWT verification error:', err);
+    // Check if user has valid JWT token
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.userId);
+        
+        // Only include contact info if user has active membership
+        if (user?.membership?.type && user.membership.type !== 'none' && 
+            (!user.membership.expiresAt || new Date(user.membership.expiresAt) > new Date())) {
+          shouldShowContact = true;
         }
+      } catch (err) {
+        console.error('JWT verification error:', err);
       }
+    }
 
-      if (!shouldShowContact) {
-        // Remove contact info for guests or users without active membership
-        const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
+    if (!shouldShowContact) {
+      // Remove contact info for guests or users without active membership
+      if (safeAd.user) {
+        const { email, whatsappNumber, ...safeUser } = safeAd.user;
         safeAd.user = safeUser;
       }
+      // Also remove customWhatsapp from the ad itself
+      const { customWhatsapp, ...safeAdData } = safeAd;
+      Object.assign(safeAd, safeAdData);
     }
 
     res.json(safeAd);
