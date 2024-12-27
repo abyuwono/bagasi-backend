@@ -73,7 +73,7 @@ router.get('/', async (req, res) => {
     console.log('Query:', JSON.stringify(query, null, 2));
 
     const ads = await Ad.find(query)
-      .populate('user', 'username email whatsappNumber rating totalReviews isVerified')
+      .populate('user', 'username rating totalReviews isVerified')
       .sort({ createdAt: -1 });
 
     console.log(`Found ${ads.length} ads`);
@@ -81,7 +81,17 @@ router.get('/', async (req, res) => {
       console.log('Sample ad user:', JSON.stringify(ads[0].user, null, 2));
     }
     
-    res.json(ads);
+    // Transform data to ensure sensitive info is removed
+    const safeAds = ads.map(ad => {
+      const adObj = ad.toObject();
+      if (adObj.user) {
+        const { email, whatsappNumber, ...safeUser } = adObj.user;
+        adObj.user = safeUser;
+      }
+      return adObj;
+    });
+
+    res.json(safeAds);
   } catch (error) {
     console.error('Error fetching ads:', error);
     res.status(500).json({ 
@@ -101,13 +111,20 @@ router.get('/:id', async (req, res) => {
 
   try {
     const ad = await Ad.findById(req.params.id)
-      .populate('user', 'username email whatsappNumber rating totalReviews isVerified');
+      .populate('user', 'username rating totalReviews isVerified');
     
     if (!ad) {
       return res.status(404).json({ message: 'ID Jasa Titipan tidak ditemukan atau telah kadaluarsa / expired' });
     }
     
-    res.json(ad);
+    // Transform data to ensure sensitive info is removed
+    const safeAd = ad.toObject();
+    if (safeAd.user) {
+      const { email, whatsappNumber, ...safeUser } = safeAd.user;
+      safeAd.user = safeUser;
+    }
+
+    res.json(safeAd);
   } catch (error) {
     console.error('Error fetching ad:', error);
     res.status(500).json({ message: 'Error fetching ad', error: error.message });
