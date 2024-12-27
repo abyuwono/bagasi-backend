@@ -3,12 +3,11 @@ const router = express.Router();
 const User = require('../models/User');
 const Ad = require('../models/Ad');
 const { authenticateAdmin } = require('../middleware/auth');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Admin credentials
 const ADMIN_USERNAME = 'administrator';
-const ADMIN_PASSWORD = '$2a$10$7UF3RvDx9h5KKYs1bkUFo.PNZxzXdYLPD8RF9JgZvkDULuR3zXAGu'; // Media789
+const ADMIN_PASSWORD = '2a$10$7UF3RvDx9h5KKYs1bkUFo.4cghLkHC7fxVG80zipOiPInkq02Y90W'; // Media789
 
 // Admin authentication endpoint
 router.post('/auth/login', async (req, res) => {
@@ -23,10 +22,7 @@ router.post('/auth/login', async (req, res) => {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, ADMIN_PASSWORD);
-    console.log('Password validation:', { isValidPassword }); // Log for debugging
-    
-    if (!isValidPassword) {
+    if (password !== ADMIN_PASSWORD) {
       console.log('Invalid password'); // Log for debugging
       return res.status(401).json({ error: 'Invalid credentials' });
     }
