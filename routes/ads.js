@@ -1,6 +1,7 @@
 const express = require('express');
 const Ad = require('../models/Ad');
 const { auth, checkRole } = require('../middleware/auth');
+const jwt = require('jsonwebtoken'); // Import jwt module
 
 const router = express.Router();
 
@@ -111,17 +112,38 @@ router.get('/:id', async (req, res) => {
 
   try {
     const ad = await Ad.findById(req.params.id)
-      .populate('user', 'username rating totalReviews isVerified');
+      .populate('user', 'username rating totalReviews isVerified whatsappNumber customWhatsapp');
     
     if (!ad) {
       return res.status(404).json({ message: 'ID Jasa Titipan tidak ditemukan atau telah kadaluarsa / expired' });
     }
-    
+
     // Transform data to ensure sensitive info is removed
     const safeAd = ad.toObject();
     if (safeAd.user) {
-      const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
-      safeAd.user = safeUser;
+      // Check if user has valid JWT token
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) {
+        // No token, remove contact info
+        const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
+        safeAd.user = safeUser;
+      } else {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          const user = await User.findById(decoded.userId);
+          
+          // Only include contact info if user has active membership
+          if (!user?.membership?.type || user.membership.type === 'none' || 
+              (user.membership.expiresAt && new Date(user.membership.expiresAt) < new Date())) {
+            const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
+            safeAd.user = safeUser;
+          }
+        } catch (err) {
+          // Invalid token, remove contact info
+          const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
+          safeAd.user = safeUser;
+        }
+      }
     }
 
     res.json(safeAd);
