@@ -117,32 +117,33 @@ router.get('/:id', async (req, res) => {
     if (!ad) {
       return res.status(404).json({ message: 'ID Jasa Titipan tidak ditemukan atau telah kadaluarsa / expired' });
     }
-
+    
     // Transform data to ensure sensitive info is removed
     const safeAd = ad.toObject();
     if (safeAd.user) {
+      let shouldShowContact = false;
+
       // Check if user has valid JWT token
       const token = req.headers.authorization?.split(' ')[1];
-      if (!token) {
-        // No token, remove contact info
-        const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
-        safeAd.user = safeUser;
-      } else {
+      if (token) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           const user = await User.findById(decoded.userId);
           
           // Only include contact info if user has active membership
-          if (!user?.membership?.type || user.membership.type === 'none' || 
-              (user.membership.expiresAt && new Date(user.membership.expiresAt) < new Date())) {
-            const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
-            safeAd.user = safeUser;
+          if (user?.membership?.type && user.membership.type !== 'none' && 
+              (!user.membership.expiresAt || new Date(user.membership.expiresAt) > new Date())) {
+            shouldShowContact = true;
           }
         } catch (err) {
-          // Invalid token, remove contact info
-          const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
-          safeAd.user = safeUser;
+          console.error('JWT verification error:', err);
         }
+      }
+
+      if (!shouldShowContact) {
+        // Remove contact info for guests or users without active membership
+        const { email, whatsappNumber, customWhatsapp, ...safeUser } = safeAd.user;
+        safeAd.user = safeUser;
       }
     }
 
