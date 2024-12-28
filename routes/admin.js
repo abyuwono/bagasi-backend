@@ -236,7 +236,7 @@ router.patch('/ads/:adId/status', authenticateAdmin, async (req, res) => {
 
 router.post('/ads', authenticateAdmin, async (req, res) => {
   try {
-    const { userId, departureDate, customDisplayName, customRating, ...adData } = req.body;
+    const { userId, departureDate, customDisplayName, customRating, customWhatsapp, ...adData } = req.body;
     
     const user = await User.findById(userId);
     if (!user) {
@@ -255,6 +255,7 @@ router.post('/ads', authenticateAdmin, async (req, res) => {
       user: userId,
       customDisplayName: customDisplayName || undefined,
       customRating: customRating || undefined,
+      customWhatsapp: customWhatsapp || undefined,
       status: 'active',
       createdAt: new Date()
     });
