@@ -292,7 +292,8 @@ router.post('/send-whatsapp-message', authenticateAdmin, async (req, res) => {
     });
 
     if (!response.ok) {
-      throw new Error(`WatoChat API responded with status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `WatoChat API responded with status: ${response.status}`);
     }
 
     const data = await response.json();
