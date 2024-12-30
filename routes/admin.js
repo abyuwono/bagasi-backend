@@ -270,4 +270,32 @@ router.post('/ads', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Add new endpoint for sending WhatsApp message
+router.post('/send-whatsapp-message', authenticateAdmin, async (req, res) => {
+  try {
+    const { toNumber, message } = req.body;
+    
+    // Make the API call to WatoChat
+    const response = await fetch('https://22774.watochat.com/beli/sendMessage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: '62818550557',
+        to: toNumber,
+        text: message,
+        isAsync: true,
+        isNotify: false
+      })
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Error sending WhatsApp message:', error);
+    res.status(500).json({ error: 'Failed to send WhatsApp message' });
+  }
+});
+
 module.exports = router;
