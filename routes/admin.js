@@ -274,7 +274,7 @@ router.post('/ads', authenticateAdmin, async (req, res) => {
 // Add new endpoint for sending WhatsApp message
 router.post('/send-whatsapp-message', authenticateAdmin, async (req, res) => {
   try {
-    const { toNumber, message } = req.body;
+    const { toNumber, message, adId } = req.body;
     
     // Make the API call to WatoChat
     const response = await fetch('https://22774.watochat.com/beli/sendMessage', {
@@ -296,8 +296,20 @@ router.post('/send-whatsapp-message', authenticateAdmin, async (req, res) => {
       throw new Error(errorData.message || `WatoChat API responded with status: ${response.status}`);
     }
 
+    // Update message count and timestamp
+    const ad = await Ad.findById(adId);
+    if (ad) {
+      ad.whatsappMessageCount = (ad.whatsappMessageCount || 0) + 1;
+      ad.lastWhatsappMessageSent = new Date();
+      await ad.save();
+    }
+
     const data = await response.json();
-    res.json(data);
+    res.json({ 
+      ...data, 
+      whatsappMessageCount: ad.whatsappMessageCount,
+      lastWhatsappMessageSent: ad.lastWhatsappMessageSent 
+    });
   } catch (error) {
     console.error('Error sending WhatsApp message:', error);
     res.status(500).json({ error: 'Failed to send WhatsApp message', details: error.message });

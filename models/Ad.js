@@ -58,6 +58,14 @@ const adSchema = new mongoose.Schema({
     enum: ['active', 'expired', 'completed'],
     default: 'active',
   },
+  whatsappMessageCount: {
+    type: Number,
+    default: 0
+  },
+  lastWhatsappMessageSent: {
+    type: Date,
+    default: null
+  },
   bookings: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,
