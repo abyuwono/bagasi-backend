@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Ad = require('../models/Ad');
 const { authenticateAdmin } = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
+const fetch = require('node-fetch');
 
 // Admin credentials
 const ADMIN_USERNAME = 'administrator';
@@ -283,18 +284,22 @@ router.post('/send-whatsapp-message', authenticateAdmin, async (req, res) => {
       },
       body: JSON.stringify({
         from: '62818550557',
-        to: toNumber,
+        to: toNumber.replace(/^\+/, ''), // Remove leading + if present
         text: message,
         isAsync: true,
         isNotify: false
       })
     });
 
+    if (!response.ok) {
+      throw new Error(`WatoChat API responded with status: ${response.status}`);
+    }
+
     const data = await response.json();
     res.json(data);
   } catch (error) {
     console.error('Error sending WhatsApp message:', error);
-    res.status(500).json({ error: 'Failed to send WhatsApp message' });
+    res.status(500).json({ error: 'Failed to send WhatsApp message', details: error.message });
   }
 });
 
