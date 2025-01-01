@@ -7,8 +7,37 @@ const CurrencyConverter = require('../services/currencyConverter');
 const { sendEmail } = require('../services/emailService');
 const Chat = require('../models/Chat');
 
+// Get all active shopper ads
+router.get('/active', function(req, res) {
+  ShopperAd.find({ status: 'active' })
+    .populate('user', 'username')
+    .sort('-createdAt')
+    .then(ads => res.json(ads))
+    .catch(error => {
+      console.error('Error fetching active shopper ads:', error);
+      res.status(500).json({ message: 'Server error' });
+    });
+});
+
+// Get shopper ad details
+router.get('/:id', function(req, res) {
+  ShopperAd.findById(req.params.id)
+    .populate('user', 'username')
+    .populate('selectedTraveler', 'username')
+    .then(ad => {
+      if (!ad) {
+        return res.status(404).json({ message: 'Ad not found' });
+      }
+      res.json(ad);
+    })
+    .catch(error => {
+      console.error('Error fetching shopper ad:', error);
+      res.status(500).json({ message: 'Server error' });
+    });
+});
+
 // Create a draft shopper ad
-const createDraft = (req, res) => {
+router.post('/draft', auth, function(req, res) {
   const { productUrl, shippingAddress, localCourier, notes } = req.body;
 
   // Validate website
@@ -50,39 +79,10 @@ const createDraft = (req, res) => {
       console.error('Error creating draft shopper ad:', error);
       res.status(500).json({ message: 'Server error' });
     });
-};
-
-// Get all active shopper ads
-const getActive = (req, res) => {
-  ShopperAd.find({ status: 'active' })
-    .populate('user', 'username')
-    .sort('-createdAt')
-    .then(ads => res.json(ads))
-    .catch(error => {
-      console.error('Error fetching active shopper ads:', error);
-      res.status(500).json({ message: 'Server error' });
-    });
-};
-
-// Get shopper ad details
-const getById = (req, res) => {
-  ShopperAd.findById(req.params.id)
-    .populate('user', 'username')
-    .populate('selectedTraveler', 'username')
-    .then(ad => {
-      if (!ad) {
-        return res.status(404).json({ message: 'Ad not found' });
-      }
-      res.json(ad);
-    })
-    .catch(error => {
-      console.error('Error fetching shopper ad:', error);
-      res.status(500).json({ message: 'Server error' });
-    });
-};
+});
 
 // Update product information manually
-const updateProductInfo = (req, res) => {
+router.patch('/draft/:id/product-info', auth, function(req, res) {
   const { productImage, productPrice, productWeight } = req.body;
   
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
@@ -109,10 +109,10 @@ const updateProductInfo = (req, res) => {
       console.error('Error updating product information:', error);
       res.status(500).json({ message: 'Server error' });
     });
-};
+});
 
 // Traveler requests to help
-const requestToHelp = (req, res) => {
+router.post('/:id/request', auth, function(req, res) {
   let adRef;
 
   ShopperAd.findById(req.params.id)
@@ -161,10 +161,10 @@ const requestToHelp = (req, res) => {
       console.error('Error processing traveler request:', error);
       res.status(500).json({ message: 'Server error' });
     });
-};
+});
 
 // Shopper accepts traveler
-const acceptTraveler = (req, res) => {
+router.post('/:id/accept-traveler', auth, function(req, res) {
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
     .then(ad => {
       if (!ad) {
@@ -196,10 +196,10 @@ const acceptTraveler = (req, res) => {
       console.error('Error accepting traveler:', error);
       res.status(500).json({ message: 'Server error' });
     });
-};
+});
 
 // Update tracking number
-const updateTracking = (req, res) => {
+router.patch('/:id/tracking', auth, function(req, res) {
   const { trackingNumber } = req.body;
 
   ShopperAd.findOne({
@@ -233,10 +233,10 @@ const updateTracking = (req, res) => {
       console.error('Error updating tracking number:', error);
       res.status(500).json({ message: 'Server error' });
     });
-};
+});
 
 // Mark order as completed
-const completeOrder = (req, res) => {
+router.patch('/:id/complete', auth, function(req, res) {
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
     .then(ad => {
       if (!ad) {
@@ -256,10 +256,10 @@ const completeOrder = (req, res) => {
       console.error('Error completing order:', error);
       res.status(500).json({ message: 'Server error' });
     });
-};
+});
 
 // Cancel order
-const cancelOrder = (req, res) => {
+router.patch('/:id/cancel', auth, function(req, res) {
   ShopperAd.findOne({
     _id: req.params.id,
     $or: [{ user: req.user.id }, { selectedTraveler: req.user.id }]
@@ -293,17 +293,6 @@ const cancelOrder = (req, res) => {
       console.error('Error cancelling order:', error);
       res.status(500).json({ message: 'Server error' });
     });
-};
-
-// Routes
-router.post('/draft', auth, createDraft);
-router.get('/active', getActive);
-router.get('/:id', getById);
-router.patch('/draft/:id/product-info', auth, updateProductInfo);
-router.post('/:id/request', auth, requestToHelp);
-router.post('/:id/accept-traveler', auth, acceptTraveler);
-router.patch('/:id/tracking', auth, updateTracking);
-router.patch('/:id/complete', auth, completeOrder);
-router.patch('/:id/cancel', auth, cancelOrder);
+});
 
 module.exports = router;
