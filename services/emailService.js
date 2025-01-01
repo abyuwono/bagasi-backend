@@ -1,21 +1,16 @@
 const { SendMailClient } = require("zeptomail");
 const path = require('path');
 
-class EmailService {
+const emailService = new class EmailService {
   constructor() {
     if (!process.env.ZEPTOMAIL_TOKEN) {
       throw new Error('ZEPTOMAIL_TOKEN environment variable is required');
     }
-  }
-
-  getClient() {
-    if (!this.client) {
-      this.client = new SendMailClient({
-        url: "api.zeptomail.com/",
-        token: process.env.ZEPTOMAIL_TOKEN
-      });
-    }
-    return this.client;
+    
+    this.client = new SendMailClient({
+      url: "api.zeptomail.com/",
+      token: process.env.ZEPTOMAIL_TOKEN
+    });
   }
 
   async sendOTPEmail(email, otp) {
@@ -68,7 +63,7 @@ class EmailService {
         `
       };
 
-      const response = await this.getClient().sendMail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -122,7 +117,7 @@ class EmailService {
         `
       };
 
-      const response = await this.getClient().sendMail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -176,7 +171,7 @@ class EmailService {
         `
       };
 
-      const response = await this.getClient().sendMail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -241,7 +236,7 @@ class EmailService {
         `
       };
 
-      const response = await this.getClient().sendMail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -295,13 +290,13 @@ class EmailService {
         `
       };
 
-      const response = await this.getClient().sendMail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
       throw error;
     }
   }
-}
+};
 
-module.exports = new EmailService();
+module.exports = emailService;
