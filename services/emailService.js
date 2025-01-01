@@ -1,4 +1,4 @@
-const { Mail } = require('zeptomail');
+const { ZeptoMail } = require('zeptomail');
 const path = require('path');
 
 class EmailService {
@@ -10,15 +10,13 @@ class EmailService {
       throw new Error('ZEPTOMAIL_TOKEN environment variable is required');
     }
     
-    this.client = new Mail({
-      url,
-      token,
-    });
+    this.client = new ZeptoMail(token, url);
   }
 
   async sendOTPEmail(email, otp) {
     try {
       const template = {
+        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -66,7 +64,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.send(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -77,6 +75,7 @@ class EmailService {
   async sendAdCreatedEmail(user, ad, paymentUrl) {
     try {
       const template = {
+        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -120,7 +119,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.send(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -131,6 +130,7 @@ class EmailService {
   async sendTravelerRequestEmail(user, ad, traveler) {
     try {
       const template = {
+        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -174,7 +174,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.send(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -182,9 +182,21 @@ class EmailService {
     }
   }
 
+  getTrackingUrl(courier, trackingNumber) {
+    const courierMap = {
+      'jne': `https://www.jne.co.id/id/tracking/trace/${trackingNumber}`,
+      'jnt': `https://www.jet.co.id/track/${trackingNumber}`,
+      'sicepat': `https://www.sicepat.com/tracking/${trackingNumber}`,
+      'anteraja': `https://anteraja.id/tracking/${trackingNumber}`,
+      'pos': `https://www.posindonesia.co.id/tracking/${trackingNumber}`
+    };
+    return courierMap[courier.toLowerCase()] || '#';
+  }
+
   async sendOrderShippedEmail(user, ad) {
     try {
       const template = {
+        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -228,7 +240,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.send(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -239,6 +251,7 @@ class EmailService {
   async sendOrderCompletedEmail(user, ad) {
     try {
       const template = {
+        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -282,25 +295,12 @@ class EmailService {
         `
       };
 
-      const response = await this.client.send(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
       throw error;
     }
-  }
-
-  getTrackingUrl(courier, trackingNumber) {
-    const courierUrls = {
-      'JNE': `https://www.jne.co.id/id/tracking/trace/${trackingNumber}`,
-      'J&T Express': `https://www.jet.co.id/track/${trackingNumber}`,
-      'SiCepat': `https://www.sicepat.com/checkAwb/${trackingNumber}`,
-      'AnterAja': `https://anteraja.id/tracking/${trackingNumber}`,
-      'ID Express': `https://idexpress.com/tracking?awb=${trackingNumber}`,
-      'Ninja Express': `https://www.ninjaxpress.co/id-id/tracking?tracking_id=${trackingNumber}`
-    };
-
-    return courierUrls[courier] || null;
   }
 }
 
