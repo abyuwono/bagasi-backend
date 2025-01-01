@@ -81,22 +81,27 @@ router.patch('/draft/:id/product-info', [auth], function(req, res) {
   shopperAd.productImage = productImage;
   shopperAd.productPrice = productPrice;
   shopperAd.productWeight = productWeight;
-  shopperAd.productPriceIDR = await CurrencyConverter.convertToIDR(productPrice, 'AUD');
-
-  // Recalculate fees
-  shopperAd.calculateFees()
-    .then(function() {
-      shopperAd.save()
-        .then(function(updatedAd) {
-          res.json(updatedAd);
+  CurrencyConverter.convertToIDR(productPrice, 'AUD')
+    .then(function(productPriceIDR) {
+      shopperAd.productPriceIDR = productPriceIDR;
+      shopperAd.calculateFees()
+        .then(function() {
+          shopperAd.save()
+            .then(function(updatedAd) {
+              res.json(updatedAd);
+            })
+            .catch(function(error) {
+              console.error('Error saving ad:', error);
+              res.status(500).json({ message: 'Server error' });
+            });
         })
         .catch(function(error) {
-          console.error('Error saving ad:', error);
+          console.error('Error calculating fees:', error);
           res.status(500).json({ message: 'Server error' });
         });
     })
     .catch(function(error) {
-      console.error('Error calculating fees:', error);
+      console.error('Error converting price:', error);
       res.status(500).json({ message: 'Server error' });
     });
 });
