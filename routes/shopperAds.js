@@ -91,6 +91,19 @@ router.get('/active', async (req, res) => {
   }
 });
 
+// Get all active shopper ads
+router.get('/active', async (req, res) => {
+  try {
+    const ads = await ShopperAd.find({ status: 'active' })
+      .populate('user', 'username')
+      .sort('-createdAt');
+    res.json(ads);
+  } catch (error) {
+    console.error('Error fetching active shopper ads:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get shopper ad details
 router.get('/:id', async (req, res) => {
   try {
