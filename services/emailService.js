@@ -1,4 +1,4 @@
-const zeptomail = require('zeptomail');
+const { SendMailClient } = require("zeptomail");
 const path = require('path');
 
 class EmailService {
@@ -7,16 +7,15 @@ class EmailService {
       throw new Error('ZEPTOMAIL_TOKEN environment variable is required');
     }
     
-    this.client = new zeptomail.Initialize({
+    this.client = new SendMailClient({
       url: "api.zeptomail.com/",
-      token: process.env.ZEPTOMAIL_TOKEN,
+      token: process.env.ZEPTOMAIL_TOKEN
     });
   }
 
   async sendOTPEmail(email, otp) {
     try {
       const template = {
-        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -64,7 +63,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendmail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -75,7 +74,6 @@ class EmailService {
   async sendAdCreatedEmail(user, ad, paymentUrl) {
     try {
       const template = {
-        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -119,7 +117,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendmail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -130,7 +128,6 @@ class EmailService {
   async sendTravelerRequestEmail(user, ad, traveler) {
     try {
       const template = {
-        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -174,7 +171,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendmail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -196,7 +193,6 @@ class EmailService {
   async sendOrderShippedEmail(user, ad) {
     try {
       const template = {
-        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -240,7 +236,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendmail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -251,7 +247,6 @@ class EmailService {
   async sendOrderCompletedEmail(user, ad) {
     try {
       const template = {
-        bounce_address: "bounce@bounce.bagasi.id",
         from: {
           address: process.env.EMAIL_FROM || "noreply@bagasi.id",
           name: "Bagasi"
@@ -295,7 +290,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendmail(template);
+      const response = await this.client.sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
