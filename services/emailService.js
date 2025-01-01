@@ -1,16 +1,16 @@
-const { ZeptoMail } = require('zeptomail');
+const zeptomail = require('zeptomail');
 const path = require('path');
 
 class EmailService {
   constructor() {
-    const url = "api.zeptomail.com/";
-    const token = process.env.ZEPTOMAIL_TOKEN;
-    
-    if (!token) {
+    if (!process.env.ZEPTOMAIL_TOKEN) {
       throw new Error('ZEPTOMAIL_TOKEN environment variable is required');
     }
     
-    this.client = new ZeptoMail(token, url);
+    this.client = new zeptomail.Initialize({
+      url: "api.zeptomail.com/",
+      token: process.env.ZEPTOMAIL_TOKEN,
+    });
   }
 
   async sendOTPEmail(email, otp) {
@@ -64,7 +64,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.client.sendmail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -119,7 +119,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.client.sendmail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -174,7 +174,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.client.sendmail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -240,7 +240,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.client.sendmail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -295,7 +295,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.client.sendmail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
