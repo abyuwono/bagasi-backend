@@ -4,7 +4,7 @@ const auth = require('../middleware/auth');
 const ShopperAd = require('../models/ShopperAd');
 const ProductScraper = require('../services/productScraper');
 const CurrencyConverter = require('../services/currencyConverter');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../services/emailService');
 const Chat = require('../models/Chat');
 
 // Create a draft shopper ad
@@ -74,19 +74,6 @@ router.patch('/draft/:id/product-info', auth, async (req, res) => {
     res.json(shopperAd);
   } catch (error) {
     console.error('Error updating product information:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Get all active shopper ads
-router.get('/active', async (req, res) => {
-  try {
-    const ads = await ShopperAd.find({ status: 'active' })
-      .populate('user', 'username')
-      .sort('-createdAt');
-    res.json(ads);
-  } catch (error) {
-    console.error('Error fetching active shopper ads:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
