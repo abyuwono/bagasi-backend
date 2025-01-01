@@ -1,39 +1,38 @@
-const nodemailer = require('nodemailer');
-const hbs = require('nodemailer-express-handlebars');
+const { Mail } = require('zeptomail');
 const path = require('path');
 
 class EmailService {
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
+    const url = "api.zeptomail.com/";
+    const token = process.env.ZEPTOMAIL_TOKEN;
+    
+    if (!token) {
+      throw new Error('ZEPTOMAIL_TOKEN environment variable is required');
+    }
+    
+    this.client = new Mail({
+      url,
+      token,
     });
-
-    // Configure Handlebars
-    this.transporter.use('compile', hbs({
-      viewEngine: {
-        extname: '.hbs',
-        layoutsDir: path.resolve('./templates/emails/'),
-        defaultLayout: false,
-        partialsDir: path.resolve('./templates/emails/partials/')
-      },
-      viewPath: path.resolve('./templates/emails/'),
-      extName: '.hbs'
-    }));
   }
 
   async sendOTPEmail(email, otp) {
     try {
-      const response = await this.transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: email,
-        subject: 'Kode OTP Verifikasi Email Bagasi',
-        html: `
+      const template = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: email,
+              name: email.split('@')[0]
+            }
+          }
+        ],
+        subject: "Kode OTP Verifikasi Email Bagasi",
+        htmlbody: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #34D399;">Bagasi</h1>
@@ -50,118 +49,243 @@ class EmailService {
                 ${otp}
               </div>
               
-              <p style="color: #666; font-size: 14px;">
+              <p style="color: #666; margin-bottom: 10px;">
                 Kode OTP ini akan kadaluarsa dalam 5 menit.
-                Jangan bagikan kode ini kepada siapapun.
+              </p>
+              
+              <p style="color: #666;">
+                Jika Anda tidak merasa melakukan pendaftaran di Bagasi, abaikan email ini.
               </p>
             </div>
             
-            <div style="text-align: center; color: #999; font-size: 12px;">
+            <div style="text-align: center; color: #666; font-size: 12px;">
               <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
-              <p> ${new Date().getFullYear()} Bagasi. Hak Cipta Dilindungi.</p>
+              <p>&copy; ${new Date().getFullYear()} Bagasi. All rights reserved.</p>
             </div>
           </div>
-        `,
-      });
+        `
+      };
+
+      const response = await this.client.send(template);
       return response;
     } catch (error) {
-      console.error('Error sending OTP email:', error);
+      console.error('Error sending email:', error);
       throw error;
     }
   }
 
   async sendAdCreatedEmail(user, ad, paymentUrl) {
     try {
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: user.email,
-        subject: 'Your Jastip Request is Created - Bagasi',
-        template: 'ad-created',
-        context: {
-          username: user.username,
-          productUrl: ad.productUrl,
-          amount: ad.getTotalAmount(),
-          orderId: ad.payment.orderId,
-          paymentUrl,
-          year: new Date().getFullYear()
-        }
-      });
+      const template = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: user.email,
+              name: user.username
+            }
+          }
+        ],
+        subject: "Your Jastip Request is Created - Bagasi",
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">Jastip Request Created</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Your jastip request has been created successfully.
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Please click the link below to proceed with the payment.
+              </p>
+              
+              <div style="background-color: #34D399; color: white; padding: 15px; border-radius: 4px; font-size: 18px; text-align: center; margin-bottom: 20px;">
+                <a href="${paymentUrl}" style="color: white; text-decoration: none;">Proceed with Payment</a>
+              </div>
+            </div>
+            
+            <div style="text-align: center; color: #666; font-size: 12px;">
+              <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
+              <p>&copy; ${new Date().getFullYear()} Bagasi. All rights reserved.</p>
+            </div>
+          </div>
+        `
+      };
+
+      const response = await this.client.send(template);
+      return response;
     } catch (error) {
-      console.error('Error sending ad created email:', error);
+      console.error('Error sending email:', error);
       throw error;
     }
   }
 
   async sendTravelerRequestEmail(user, ad, traveler) {
     try {
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: user.email,
-        subject: 'New Traveler Request - Bagasi',
-        template: 'traveler-request',
-        context: {
-          username: user.username,
-          travelerName: traveler.username,
-          travelerRating: traveler.rating || 'N/A',
-          travelerOrders: traveler.completedOrders || 0,
-          productUrl: ad.productUrl,
-          commission: ad.commission.idr,
-          adUrl: `${process.env.FRONTEND_URL}/shopper-ads/${ad._id}`,
-          year: new Date().getFullYear()
-        }
-      });
+      const template = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: user.email,
+              name: user.username
+            }
+          }
+        ],
+        subject: "New Traveler Request - Bagasi",
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">New Traveler Request</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                You have a new traveler request from ${traveler.username}.
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Please click the link below to view the request details.
+              </p>
+              
+              <div style="background-color: #34D399; color: white; padding: 15px; border-radius: 4px; font-size: 18px; text-align: center; margin-bottom: 20px;">
+                <a href="${process.env.FRONTEND_URL}/shopper-ads/${ad._id}" style="color: white; text-decoration: none;">View Request Details</a>
+              </div>
+            </div>
+            
+            <div style="text-align: center; color: #666; font-size: 12px;">
+              <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
+              <p>&copy; ${new Date().getFullYear()} Bagasi. All rights reserved.</p>
+            </div>
+          </div>
+        `
+      };
+
+      const response = await this.client.send(template);
+      return response;
     } catch (error) {
-      console.error('Error sending traveler request email:', error);
+      console.error('Error sending email:', error);
       throw error;
     }
   }
 
   async sendOrderShippedEmail(user, ad) {
     try {
-      const trackingUrl = this.getTrackingUrl(ad.localCourier, ad.trackingNumber);
+      const template = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: user.email,
+              name: user.username
+            }
+          }
+        ],
+        subject: "Your Order Has Been Shipped - Bagasi",
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">Order Shipped</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Your order has been shipped successfully.
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Please click the link below to track your order.
+              </p>
+              
+              <div style="background-color: #34D399; color: white; padding: 15px; border-radius: 4px; font-size: 18px; text-align: center; margin-bottom: 20px;">
+                <a href="${this.getTrackingUrl(ad.localCourier, ad.trackingNumber)}" style="color: white; text-decoration: none;">Track Your Order</a>
+              </div>
+            </div>
+            
+            <div style="text-align: center; color: #666; font-size: 12px;">
+              <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
+              <p>&copy; ${new Date().getFullYear()} Bagasi. All rights reserved.</p>
+            </div>
+          </div>
+        `
+      };
 
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: user.email,
-        subject: 'Your Order Has Been Shipped - Bagasi',
-        template: 'order-shipped',
-        context: {
-          username: user.username,
-          courier: ad.localCourier,
-          trackingNumber: ad.trackingNumber,
-          trackingUrl,
-          productUrl: ad.productUrl,
-          shippingAddress: ad.shippingAddress.fullAddress,
-          orderId: ad.payment.orderId,
-          adUrl: `${process.env.FRONTEND_URL}/shopper-ads/${ad._id}`,
-          year: new Date().getFullYear()
-        }
-      });
+      const response = await this.client.send(template);
+      return response;
     } catch (error) {
-      console.error('Error sending order shipped email:', error);
+      console.error('Error sending email:', error);
       throw error;
     }
   }
 
   async sendOrderCompletedEmail(user, ad) {
     try {
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: user.email,
-        subject: 'Order Completed Successfully - Bagasi',
-        template: 'order-completed',
-        context: {
-          username: user.username,
-          productUrl: ad.productUrl,
-          orderId: ad.payment.orderId,
-          amount: ad.getTotalAmount(),
-          ratingUrl: `${process.env.FRONTEND_URL}/rate/${ad._id}`,
-          createNewUrl: `${process.env.FRONTEND_URL}/shopper-ads/new`,
-          year: new Date().getFullYear()
-        }
-      });
+      const template = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: user.email,
+              name: user.username
+            }
+          }
+        ],
+        subject: "Order Completed Successfully - Bagasi",
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">Order Completed</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Your order has been completed successfully.
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Please click the link below to rate your experience.
+              </p>
+              
+              <div style="background-color: #34D399; color: white; padding: 15px; border-radius: 4px; font-size: 18px; text-align: center; margin-bottom: 20px;">
+                <a href="${process.env.FRONTEND_URL}/rate/${ad._id}" style="color: white; text-decoration: none;">Rate Your Experience</a>
+              </div>
+            </div>
+            
+            <div style="text-align: center; color: #666; font-size: 12px;">
+              <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
+              <p>&copy; ${new Date().getFullYear()} Bagasi. All rights reserved.</p>
+            </div>
+          </div>
+        `
+      };
+
+      const response = await this.client.send(template);
+      return response;
     } catch (error) {
-      console.error('Error sending order completed email:', error);
+      console.error('Error sending email:', error);
       throw error;
     }
   }
