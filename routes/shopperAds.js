@@ -4,7 +4,7 @@ const auth = require('../middleware/auth');
 const ShopperAd = require('../models/ShopperAd');
 const ProductScraper = require('../services/productScraper');
 const CurrencyConverter = require('../services/currencyConverter');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../services/emailService');
 const Chat = require('../models/Chat');
 
 // Create a draft shopper ad
