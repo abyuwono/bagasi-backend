@@ -1,22 +1,21 @@
 const { SendMailClient } = require("zeptomail");
 const path = require('path');
 
-let client = null;
-
 class EmailService {
   constructor() {
     if (!process.env.ZEPTOMAIL_TOKEN) {
       throw new Error('ZEPTOMAIL_TOKEN environment variable is required');
     }
-    
-    if (!client) {
-      client = new SendMailClient({
+  }
+
+  getClient() {
+    if (!this.client) {
+      this.client = new SendMailClient({
         url: "api.zeptomail.com/",
         token: process.env.ZEPTOMAIL_TOKEN
       });
     }
-    
-    this.client = client;
+    return this.client;
   }
 
   async sendOTPEmail(email, otp) {
@@ -69,7 +68,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.getClient().sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -123,7 +122,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.getClient().sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -177,7 +176,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.getClient().sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -242,7 +241,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.getClient().sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -296,7 +295,7 @@ class EmailService {
         `
       };
 
-      const response = await this.client.sendMail(template);
+      const response = await this.getClient().sendMail(template);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
