@@ -8,7 +8,7 @@ const { sendEmail } = require('../services/emailService');
 const Chat = require('../models/Chat');
 
 // Create a draft shopper ad
-router.post('/draft', auth, async function(req, res) {
+const createDraft = async (req, res) => {
   try {
     const { productUrl, shippingAddress, localCourier, notes } = req.body;
 
@@ -49,10 +49,41 @@ router.post('/draft', auth, async function(req, res) {
     console.error('Error creating draft shopper ad:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
+
+// Get all active shopper ads
+const getActive = async (req, res) => {
+  try {
+    const ads = await ShopperAd.find({ status: 'active' })
+      .populate('user', 'username')
+      .sort('-createdAt');
+    res.json(ads);
+  } catch (error) {
+    console.error('Error fetching active shopper ads:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get shopper ad details
+const getById = async (req, res) => {
+  try {
+    const ad = await ShopperAd.findById(req.params.id)
+      .populate('user', 'username')
+      .populate('selectedTraveler', 'username');
+
+    if (!ad) {
+      return res.status(404).json({ message: 'Ad not found' });
+    }
+
+    res.json(ad);
+  } catch (error) {
+    console.error('Error fetching shopper ad:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 // Update product information manually
-router.patch('/draft/:id/product-info', auth, async function(req, res) {
+const updateProductInfo = async (req, res) => {
   try {
     const { productImage, productPrice, productWeight } = req.body;
     const shopperAd = await ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
@@ -76,41 +107,10 @@ router.patch('/draft/:id/product-info', auth, async function(req, res) {
     console.error('Error updating product information:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
-
-// Get all active shopper ads
-router.get('/active', async function(req, res) {
-  try {
-    const ads = await ShopperAd.find({ status: 'active' })
-      .populate('user', 'username')
-      .sort('-createdAt');
-    res.json(ads);
-  } catch (error) {
-    console.error('Error fetching active shopper ads:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Get shopper ad details
-router.get('/:id', async function(req, res) {
-  try {
-    const ad = await ShopperAd.findById(req.params.id)
-      .populate('user', 'username')
-      .populate('selectedTraveler', 'username');
-
-    if (!ad) {
-      return res.status(404).json({ message: 'Ad not found' });
-    }
-
-    res.json(ad);
-  } catch (error) {
-    console.error('Error fetching shopper ad:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+};
 
 // Traveler requests to help
-router.post('/:id/request', auth, async function(req, res) {
+const requestToHelp = async (req, res) => {
   try {
     const ad = await ShopperAd.findById(req.params.id);
 
@@ -152,10 +152,10 @@ router.post('/:id/request', auth, async function(req, res) {
     console.error('Error processing traveler request:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
 // Shopper accepts traveler
-router.post('/:id/accept-traveler', auth, async function(req, res) {
+const acceptTraveler = async (req, res) => {
   try {
     const ad = await ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
 
@@ -188,10 +188,10 @@ router.post('/:id/accept-traveler', auth, async function(req, res) {
     console.error('Error accepting traveler:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
 // Update tracking number
-router.patch('/:id/tracking', auth, async function(req, res) {
+const updateTracking = async (req, res) => {
   try {
     const { trackingNumber } = req.body;
     const ad = await ShopperAd.findOne({
@@ -224,10 +224,10 @@ router.patch('/:id/tracking', auth, async function(req, res) {
     console.error('Error updating tracking number:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
 // Mark order as completed
-router.patch('/:id/complete', auth, async function(req, res) {
+const completeOrder = async (req, res) => {
   try {
     const ad = await ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
 
@@ -249,10 +249,10 @@ router.patch('/:id/complete', auth, async function(req, res) {
     console.error('Error completing order:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
 // Cancel order
-router.patch('/:id/cancel', auth, async function(req, res) {
+const cancelOrder = async (req, res) => {
   try {
     const ad = await ShopperAd.findOne({
       _id: req.params.id,
@@ -287,6 +287,17 @@ router.patch('/:id/cancel', auth, async function(req, res) {
     console.error('Error cancelling order:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
+
+// Routes
+router.post('/draft', auth, createDraft);
+router.get('/active', getActive);
+router.get('/:id', getById);
+router.patch('/draft/:id/product-info', auth, updateProductInfo);
+router.post('/:id/request', auth, requestToHelp);
+router.post('/:id/accept-traveler', auth, acceptTraveler);
+router.patch('/:id/tracking', auth, updateTracking);
+router.patch('/:id/complete', auth, completeOrder);
+router.patch('/:id/cancel', auth, cancelOrder);
 
 module.exports = router;
