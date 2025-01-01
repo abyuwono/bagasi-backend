@@ -8,7 +8,7 @@ const { sendEmail } = require('../services/emailService');
 const Chat = require('../models/Chat');
 
 // Create a draft shopper ad
-router.post('/draft', [auth], function(req, res) {
+router.post('/draft', auth, function(req, res) {
   const { productUrl, shippingAddress, localCourier, notes } = req.body;
 
   // Validate website
@@ -69,7 +69,7 @@ router.post('/draft', [auth], function(req, res) {
 });
 
 // Update product information manually
-router.patch('/draft/:id/product-info', [auth], function(req, res) {
+router.patch('/draft/:id/product-info', auth, function(req, res) {
   const { productImage, productPrice, productWeight } = req.body;
   const shopperAd = ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
 
@@ -138,7 +138,7 @@ router.get('/:id', function(req, res) {
 });
 
 // Traveler requests to help
-router.post('/:id/request', [auth], function(req, res) {
+router.post('/:id/request', auth, function(req, res) {
   ShopperAd.findById(req.params.id)
     .then(function(ad) {
       if (!ad) {
@@ -196,7 +196,7 @@ router.post('/:id/request', [auth], function(req, res) {
 });
 
 // Shopper accepts traveler
-router.post('/:id/accept-traveler', [auth], function(req, res) {
+router.post('/:id/accept-traveler', auth, function(req, res) {
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
     .then(function(ad) {
       if (!ad) {
@@ -241,7 +241,7 @@ router.post('/:id/accept-traveler', [auth], function(req, res) {
 });
 
 // Update tracking number
-router.patch('/:id/tracking', [auth], function(req, res) {
+router.patch('/:id/tracking', auth, function(req, res) {
   const { trackingNumber } = req.body;
 
   ShopperAd.findOne({
@@ -288,7 +288,7 @@ router.patch('/:id/tracking', [auth], function(req, res) {
 });
 
 // Mark order as completed
-router.patch('/:id/complete', [auth], function(req, res) {
+router.patch('/:id/complete', auth, function(req, res) {
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
     .then(function(ad) {
       if (!ad) {
@@ -315,7 +315,7 @@ router.patch('/:id/complete', [auth], function(req, res) {
 });
 
 // Cancel order
-router.patch('/:id/cancel', [auth], function(req, res) {
+router.patch('/:id/cancel', auth, function(req, res) {
   ShopperAd.findOne({
     _id: req.params.id,
     $or: [{ user: req.user.id }, { selectedTraveler: req.user.id }]
