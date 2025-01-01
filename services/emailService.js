@@ -1,16 +1,22 @@
 const { SendMailClient } = require("zeptomail");
 const path = require('path');
 
+let client = null;
+
 class EmailService {
   constructor() {
     if (!process.env.ZEPTOMAIL_TOKEN) {
       throw new Error('ZEPTOMAIL_TOKEN environment variable is required');
     }
     
-    this.client = new SendMailClient({
-      url: "api.zeptomail.com/",
-      token: process.env.ZEPTOMAIL_TOKEN
-    });
+    if (!client) {
+      client = new SendMailClient({
+        url: "api.zeptomail.com/",
+        token: process.env.ZEPTOMAIL_TOKEN
+      });
+    }
+    
+    this.client = client;
   }
 
   async sendOTPEmail(email, otp) {
