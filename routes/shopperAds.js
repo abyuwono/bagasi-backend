@@ -8,7 +8,7 @@ const { sendEmail } = require('../services/emailService');
 const Chat = require('../models/Chat');
 
 // Create a draft shopper ad
-router.post('/draft', auth, async (req, res) => {
+router.post('/draft', auth, async function(req, res) {
   try {
     const { productUrl, shippingAddress, localCourier, notes } = req.body;
 
@@ -52,7 +52,7 @@ router.post('/draft', auth, async (req, res) => {
 });
 
 // Update product information manually
-router.patch('/draft/:id/product-info', auth, async (req, res) => {
+router.patch('/draft/:id/product-info', auth, async function(req, res) {
   try {
     const { productImage, productPrice, productWeight } = req.body;
     const shopperAd = await ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
@@ -79,7 +79,7 @@ router.patch('/draft/:id/product-info', auth, async (req, res) => {
 });
 
 // Get all active shopper ads
-router.get('/active', async (req, res) => {
+router.get('/active', async function(req, res) {
   try {
     const ads = await ShopperAd.find({ status: 'active' })
       .populate('user', 'username')
@@ -92,7 +92,7 @@ router.get('/active', async (req, res) => {
 });
 
 // Get shopper ad details
-router.get('/:id', async (req, res) => {
+router.get('/:id', async function(req, res) {
   try {
     const ad = await ShopperAd.findById(req.params.id)
       .populate('user', 'username')
@@ -110,7 +110,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Traveler requests to help
-router.post('/:id/request', auth, async (req, res) => {
+router.post('/:id/request', auth, async function(req, res) {
   try {
     const ad = await ShopperAd.findById(req.params.id);
 
@@ -155,7 +155,7 @@ router.post('/:id/request', auth, async (req, res) => {
 });
 
 // Shopper accepts traveler
-router.post('/:id/accept-traveler', auth, async (req, res) => {
+router.post('/:id/accept-traveler', auth, async function(req, res) {
   try {
     const ad = await ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
 
@@ -191,7 +191,7 @@ router.post('/:id/accept-traveler', auth, async (req, res) => {
 });
 
 // Update tracking number
-router.patch('/:id/tracking', auth, async (req, res) => {
+router.patch('/:id/tracking', auth, async function(req, res) {
   try {
     const { trackingNumber } = req.body;
     const ad = await ShopperAd.findOne({
@@ -227,7 +227,7 @@ router.patch('/:id/tracking', auth, async (req, res) => {
 });
 
 // Mark order as completed
-router.patch('/:id/complete', auth, async (req, res) => {
+router.patch('/:id/complete', auth, async function(req, res) {
   try {
     const ad = await ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
 
@@ -252,7 +252,7 @@ router.patch('/:id/complete', auth, async (req, res) => {
 });
 
 // Cancel order
-router.patch('/:id/cancel', auth, async (req, res) => {
+router.patch('/:id/cancel', auth, async function(req, res) {
   try {
     const ad = await ShopperAd.findOne({
       _id: req.params.id,
