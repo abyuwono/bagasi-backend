@@ -12,8 +12,10 @@ router.get('/active', function(req, res) {
   ShopperAd.find({ status: 'active' })
     .populate('user', 'username')
     .sort('-createdAt')
-    .then(ads => res.json(ads))
-    .catch(error => {
+    .then(function(ads) {
+      res.json(ads);
+    })
+    .catch(function(error) {
       console.error('Error fetching active shopper ads:', error);
       res.status(500).json({ message: 'Server error' });
     });
@@ -24,13 +26,13 @@ router.get('/:id', function(req, res) {
   ShopperAd.findById(req.params.id)
     .populate('user', 'username')
     .populate('selectedTraveler', 'username')
-    .then(ad => {
+    .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
       }
       res.json(ad);
     })
-    .catch(error => {
+    .catch(function(error) {
       console.error('Error fetching shopper ad:', error);
       res.status(500).json({ message: 'Server error' });
     });
@@ -47,14 +49,14 @@ router.post('/draft', auth, function(req, res) {
 
   // Scrape product information
   ProductScraper.scrapeProduct(productUrl)
-    .then(productInfo => {
+    .then(function(productInfo) {
       if (!productInfo) {
         return res.status(400).json({ message: 'Failed to fetch product information' });
       }
 
       // Convert price to IDR
-      return CurrencyConverter.convertToIDR(productInfo.price, 'AUD')
-        .then(productPriceIDR => {
+      CurrencyConverter.convertToIDR(productInfo.price, 'AUD')
+        .then(function(productPriceIDR) {
           const shopperAd = new ShopperAd({
             user: req.user.id,
             productUrl,
@@ -70,12 +72,24 @@ router.post('/draft', auth, function(req, res) {
           });
 
           // Calculate fees and save
-          return shopperAd.calculateFees()
-            .then(() => shopperAd.save())
-            .then(savedAd => res.status(201).json(savedAd));
+          shopperAd.calculateFees()
+            .then(function() {
+              return shopperAd.save();
+            })
+            .then(function(savedAd) {
+              res.status(201).json(savedAd);
+            })
+            .catch(function(error) {
+              console.error('Error saving shopper ad:', error);
+              res.status(500).json({ message: 'Server error' });
+            });
+        })
+        .catch(function(error) {
+          console.error('Error converting price:', error);
+          res.status(500).json({ message: 'Server error' });
         });
     })
-    .catch(error => {
+    .catch(function(error) {
       console.error('Error creating draft shopper ad:', error);
       res.status(500).json({ message: 'Server error' });
     });
@@ -86,7 +100,7 @@ router.patch('/draft/:id/product-info', auth, function(req, res) {
   const { productImage, productPrice, productWeight } = req.body;
   
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
-    .then(shopperAd => {
+    .then(function(shopperAd) {
       if (!shopperAd) {
         return res.status(404).json({ message: 'Ad not found' });
       }
@@ -97,16 +111,24 @@ router.patch('/draft/:id/product-info', auth, function(req, res) {
       shopperAd.productWeight = productWeight;
 
       // Convert price and save
-      return CurrencyConverter.convertToIDR(productPrice, 'AUD')
-        .then(productPriceIDR => {
+      CurrencyConverter.convertToIDR(productPrice, 'AUD')
+        .then(function(productPriceIDR) {
           shopperAd.productPriceIDR = productPriceIDR;
           return shopperAd.calculateFees();
         })
-        .then(() => shopperAd.save())
-        .then(updatedAd => res.json(updatedAd));
+        .then(function() {
+          return shopperAd.save();
+        })
+        .then(function(updatedAd) {
+          res.json(updatedAd);
+        })
+        .catch(function(error) {
+          console.error('Error updating product info:', error);
+          res.status(500).json({ message: 'Server error' });
+        });
     })
-    .catch(error => {
-      console.error('Error updating product information:', error);
+    .catch(function(error) {
+      console.error('Error finding shopper ad:', error);
       res.status(500).json({ message: 'Server error' });
     });
 });
@@ -116,7 +138,7 @@ router.post('/:id/request', auth, function(req, res) {
   let adRef;
 
   ShopperAd.findById(req.params.id)
-    .then(ad => {
+    .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
       }
@@ -135,13 +157,13 @@ router.post('/:id/request', auth, function(req, res) {
 
       return chat.save();
     })
-    .then(chat => {
+    .then(function(chat) {
       // Update ad status
       adRef.status = 'in_discussion';
       adRef.selectedTraveler = req.user.id;
-      return adRef.save().then(() => chat);
+      return adRef.save().then(function() { return chat; });
     })
-    .then(chat => {
+    .then(function(chat) {
       // Send email notification
       return sendEmail({
         to: adRef.user.email,
@@ -152,12 +174,12 @@ router.post('/:id/request', auth, function(req, res) {
           travelerName: req.user.username,
           productUrl: adRef.productUrl
         }
-      }).then(() => chat);
+      }).then(function() { return chat; });
     })
-    .then(chat => {
+    .then(function(chat) {
       res.json({ message: 'Request sent successfully', chatId: chat._id });
     })
-    .catch(error => {
+    .catch(function(error) {
       console.error('Error processing traveler request:', error);
       res.status(500).json({ message: 'Server error' });
     });
@@ -166,7 +188,7 @@ router.post('/:id/request', auth, function(req, res) {
 // Shopper accepts traveler
 router.post('/:id/accept-traveler', auth, function(req, res) {
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
-    .then(ad => {
+    .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
       }
@@ -175,7 +197,7 @@ router.post('/:id/accept-traveler', auth, function(req, res) {
       }
 
       ad.status = 'accepted';
-      return ad.save().then(() => {
+      return ad.save().then(function() {
         return sendEmail({
           to: ad.selectedTraveler.email,
           subject: 'Your Request Has Been Accepted',
@@ -189,10 +211,10 @@ router.post('/:id/accept-traveler', auth, function(req, res) {
         });
       });
     })
-    .then(() => {
+    .then(function() {
       res.json({ message: 'Traveler accepted successfully' });
     })
-    .catch(error => {
+    .catch(function(error) {
       console.error('Error accepting traveler:', error);
       res.status(500).json({ message: 'Server error' });
     });
@@ -206,14 +228,14 @@ router.patch('/:id/tracking', auth, function(req, res) {
     _id: req.params.id,
     selectedTraveler: req.user.id
   })
-    .then(ad => {
+    .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
       }
 
       ad.trackingNumber = trackingNumber;
       ad.status = 'shipped';
-      return ad.save().then(() => {
+      return ad.save().then(function() {
         return sendEmail({
           to: ad.user.email,
           subject: 'Your Item Has Been Shipped',
@@ -226,10 +248,10 @@ router.patch('/:id/tracking', auth, function(req, res) {
         });
       });
     })
-    .then(() => {
+    .then(function() {
       res.json({ message: 'Tracking number updated successfully' });
     })
-    .catch(error => {
+    .catch(function(error) {
       console.error('Error updating tracking number:', error);
       res.status(500).json({ message: 'Server error' });
     });
@@ -238,7 +260,7 @@ router.patch('/:id/tracking', auth, function(req, res) {
 // Mark order as completed
 router.patch('/:id/complete', auth, function(req, res) {
   ShopperAd.findOne({ _id: req.params.id, user: req.user.id })
-    .then(ad => {
+    .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
       }
@@ -249,10 +271,10 @@ router.patch('/:id/complete', auth, function(req, res) {
       ad.status = 'completed';
       return ad.save();
     })
-    .then(() => {
+    .then(function() {
       res.json({ message: 'Order marked as completed' });
     })
-    .catch(error => {
+    .catch(function(error) {
       console.error('Error completing order:', error);
       res.status(500).json({ message: 'Server error' });
     });
@@ -264,7 +286,7 @@ router.patch('/:id/cancel', auth, function(req, res) {
     _id: req.params.id,
     $or: [{ user: req.user.id }, { selectedTraveler: req.user.id }]
   })
-    .then(ad => {
+    .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
       }
@@ -273,7 +295,7 @@ router.patch('/:id/cancel', auth, function(req, res) {
       }
 
       ad.status = 'cancelled';
-      return ad.save().then(() => {
+      return ad.save().then(function() {
         const otherUser = req.user.id === ad.user.toString() ? ad.selectedTraveler : ad.user;
         return sendEmail({
           to: otherUser.email,
@@ -286,10 +308,10 @@ router.patch('/:id/cancel', auth, function(req, res) {
         });
       });
     })
-    .then(() => {
+    .then(function() {
       res.json({ message: 'Order cancelled successfully' });
     })
-    .catch(error => {
+    .catch(function(error) {
       console.error('Error cancelling order:', error);
       res.status(500).json({ message: 'Server error' });
     });
