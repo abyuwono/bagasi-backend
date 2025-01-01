@@ -6,7 +6,7 @@ if (!process.env.ZEPTOMAIL_TOKEN) {
 }
 
 const client = new SendMailClient({
-  url: "api.zeptomail.com/",
+  url: "api.zeptomail.eu/",
   token: process.env.ZEPTOMAIL_TOKEN
 });
 
