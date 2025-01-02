@@ -7,7 +7,7 @@ const CurrencyConverter = require('../services/currencyConverter');
 const emailService = require('../services/emailService');
 const Chat = require('../models/Chat');
 const { uploadImageFromUrl } = require('../services/cloudflareService');
-const mongoose = require('mongoose');
+const { ObjectId } = require('mongoose').Types;
 
 // Create a draft shopper ad
 router.post('/draft', auth, async function(req, res) {
@@ -351,7 +351,7 @@ router.patch('/:id/cancel', auth, function(req, res) {
 // Get shopper ads by traveler ID
 router.get('/traveler/:id', auth, function(req, res) {
   try {
-    const travelerId = new mongoose.Types.ObjectId(req.params.id);
+    const travelerId = new ObjectId(req.params.id);
     ShopperAd.find({ selectedTraveler: travelerId })
       .populate('user', 'username')
       .sort('-createdAt')
