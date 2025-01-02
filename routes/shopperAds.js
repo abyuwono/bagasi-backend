@@ -347,4 +347,18 @@ router.patch('/:id/cancel', auth, function(req, res) {
     });
 });
 
+// Get shopper ads by traveler ID
+router.get('/traveler/:id', auth, function(req, res) {
+  ShopperAd.find({ selectedTraveler: req.params.id })
+    .populate('user', 'username')
+    .sort('-createdAt')
+    .then(function(ads) {
+      res.json(ads);
+    })
+    .catch(function(error) {
+      console.error('Error fetching traveler shopper ads:', error);
+      res.status(500).json({ message: 'Server error' });
+    });
+});
+
 module.exports = router;
