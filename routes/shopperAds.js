@@ -7,6 +7,7 @@ const CurrencyConverter = require('../services/currencyConverter');
 const emailService = require('../services/emailService');
 const Chat = require('../models/Chat');
 const { uploadImageFromUrl } = require('../services/cloudflareService');
+const mongoose = require('mongoose');
 
 // Create a draft shopper ad
 router.post('/draft', auth, async function(req, res) {
@@ -349,16 +350,22 @@ router.patch('/:id/cancel', auth, function(req, res) {
 
 // Get shopper ads by traveler ID
 router.get('/traveler/:id', auth, function(req, res) {
-  ShopperAd.find({ selectedTraveler: req.params.id })
-    .populate('user', 'username')
-    .sort('-createdAt')
-    .then(function(ads) {
-      res.json(ads);
-    })
-    .catch(function(error) {
-      console.error('Error fetching traveler shopper ads:', error);
-      res.status(500).json({ message: 'Server error' });
-    });
+  try {
+    const travelerId = mongoose.Types.ObjectId(req.params.id);
+    ShopperAd.find({ selectedTraveler: travelerId })
+      .populate('user', 'username')
+      .sort('-createdAt')
+      .then(function(ads) {
+        res.json(ads);
+      })
+      .catch(function(error) {
+        console.error('Error fetching traveler shopper ads:', error);
+        res.status(500).json({ message: 'Server error' });
+      });
+  } catch (error) {
+    console.error('Invalid traveler ID:', error);
+    res.status(400).json({ message: 'Invalid traveler ID' });
+  }
 });
 
 module.exports = router;
