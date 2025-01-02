@@ -39,6 +39,7 @@ router.post('/draft', auth, async function(req, res) {
     const shopperAd = new ShopperAd({
       user: req.user.id,
       productUrl,
+      productName: productInfo.name,
       productImage: productInfo.image,
       productPrice: productInfo.price,
       productWeight: productInfo.weight,
