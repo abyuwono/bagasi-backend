@@ -354,7 +354,7 @@ router.get('/traveler/:id', auth, function(req, res) {
   try {
     const travelerId = new ObjectId(req.params.id);
     ShopperAd.find({ selectedTraveler: travelerId })
-      .populate('user', 'username')
+      .populate('user', 'username isVerified isActive')
       .select('_id productUrl productName productWeight productPriceIDR commission status user')
       .sort('-createdAt')
       .then(function(ads) {
