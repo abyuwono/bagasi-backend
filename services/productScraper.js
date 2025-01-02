@@ -43,6 +43,7 @@ class ProductScraper {
   static async scrapeAmazon(html) {
     const $ = cheerio.load(html);
     return {
+      name: $('#productTitle').text().trim(),
       image: $('#landingImage').attr('src'),
       price: parseFloat($('#priceblock_ourprice').text().replace('$', '').trim()),
       weight: this.extractWeight($('#productDetails_detailBullets_sections1 tr').text())
@@ -52,6 +53,7 @@ class ProductScraper {
   static async scrapeChemistWarehouse(html) {
     const $ = cheerio.load(html);
     return {
+      name: $('.product-name h1').text().trim(),
       image: $('.product-image img').attr('src'),
       price: parseFloat($('.product-price').text().replace('$', '').trim()),
       weight: this.extractWeight($('.product-details').text())
@@ -61,6 +63,7 @@ class ProductScraper {
   static async scrapeEbay(html) {
     const $ = cheerio.load(html);
     return {
+      name: $('#itemTitle').text().replace('Details about', '').trim(),
       image: $('#icImg').attr('src'),
       price: parseFloat($('#prcIsum').text().replace('AU $', '').trim()),
       weight: this.extractWeight($('#itemSpecifics').text())
@@ -70,6 +73,7 @@ class ProductScraper {
   static async scrapeColes(html) {
     const $ = cheerio.load(html);
     return {
+      name: $('.product-title').text().trim(),
       image: $('.product-image img').attr('src'),
       price: parseFloat($('.product-price').text().replace('$', '').trim()),
       weight: this.extractWeight($('.product-details').text())
@@ -79,6 +83,7 @@ class ProductScraper {
   static async scrapeWoolworths(html) {
     const $ = cheerio.load(html);
     return {
+      name: $('.product-title').text().trim(),
       image: $('.product-image img').attr('src'),
       price: parseFloat($('.product-price').text().replace('$', '').trim()),
       weight: this.extractWeight($('.product-details').text())
