@@ -4,7 +4,7 @@ const { auth } = require('../middleware/auth');
 const ShopperAd = require('../models/ShopperAd');
 const ProductScraper = require('../services/productScraper');
 const CurrencyConverter = require('../services/currencyConverter');
-const { sendEmail } = require('../services/emailService');
+const emailService = require('../services/emailService');
 const Chat = require('../models/Chat');
 const { uploadImageFromUrl } = require('../services/cloudflareService');
 
@@ -148,7 +148,7 @@ router.post('/:id/request', auth, function(req, res) {
           ad.save()
             .then(function() {
               // Send email notification to shopper
-              sendEmail({
+              emailService.sendEmail({
                 to: ad.user.email,
                 subject: 'New Request for Your Shopping Ad',
                 template: 'traveler-request',
@@ -197,7 +197,7 @@ router.post('/:id/accept-traveler', auth, function(req, res) {
       ad.save()
         .then(function() {
           // Send email notifications
-          sendEmail({
+          emailService.sendEmail({
             to: ad.selectedTraveler.email,
             subject: 'Your Request Has Been Accepted',
             template: 'request-accepted',
@@ -245,7 +245,7 @@ router.patch('/:id/tracking', auth, function(req, res) {
       ad.save()
         .then(function() {
           // Send email notification to shopper
-          sendEmail({
+          emailService.sendEmail({
             to: ad.user.email,
             subject: 'Your Item Has Been Shipped',
             template: 'item-shipped',
@@ -319,7 +319,7 @@ router.patch('/:id/cancel', auth, function(req, res) {
       ad.save()
         .then(function() {
           const otherUser = req.user.id === ad.user.toString() ? ad.selectedTraveler : ad.user;
-          sendEmail({
+          emailService.sendEmail({
             to: otherUser.email,
             subject: 'Order Cancelled',
             template: 'order-cancelled',
