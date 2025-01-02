@@ -351,7 +351,7 @@ router.patch('/:id/cancel', auth, function(req, res) {
 // Get shopper ads by traveler ID
 router.get('/traveler/:id', auth, function(req, res) {
   try {
-    const travelerId = mongoose.Types.ObjectId(req.params.id);
+    const travelerId = new mongoose.Types.ObjectId(req.params.id);
     ShopperAd.find({ selectedTraveler: travelerId })
       .populate('user', 'username')
       .sort('-createdAt')
