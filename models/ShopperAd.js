@@ -14,6 +14,12 @@ const shopperAdSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  cloudflareImageId: {
+    type: String
+  },
+  cloudflareImageUrl: {
+    type: String
+  },
   productPrice: {
     type: Number,
     required: true

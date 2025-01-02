@@ -6,104 +6,90 @@ const ProductScraper = require('../services/productScraper');
 const CurrencyConverter = require('../services/currencyConverter');
 const { sendEmail } = require('../services/emailService');
 const Chat = require('../models/Chat');
+const { uploadImageFromUrl } = require('../services/cloudflareService');
 
 // Create a draft shopper ad
-router.post('/draft', auth, function(req, res) {
-  const { productUrl, shippingAddress, localCourier, notes } = req.body;
+router.post('/draft', auth, async function(req, res) {
+  try {
+    const { productUrl, shippingAddress, localCourier, notes } = req.body;
 
-  // Validate website
-  if (!ShopperAd.isValidWebsite(productUrl)) {
-    return res.status(400).json({ message: 'Unsupported website' });
-  }
+    // Validate website
+    if (!ShopperAd.isValidWebsite(productUrl)) {
+      return res.status(400).json({ message: 'Unsupported website' });
+    }
 
-  // Scrape product information
-  ProductScraper.scrapeProduct(productUrl)
-    .then(function(productInfo) {
-      if (!productInfo) {
-        return res.status(400).json({ message: 'Failed to fetch product information' });
+    // Scrape product information
+    const productInfo = await ProductScraper.scrapeProduct(productUrl);
+    if (!productInfo) {
+      return res.status(400).json({ message: 'Failed to fetch product information' });
+    }
+
+    // Upload image to Cloudflare if productImage is a URL
+    if (productInfo.image && productInfo.image.startsWith('http')) {
+      const cloudflareResult = await uploadImageFromUrl(productInfo.image);
+      if (cloudflareResult.success) {
+        productInfo.image = cloudflareResult.imageUrl;
       }
+    }
 
-      // Convert price to IDR
-      CurrencyConverter.convertToIDR(productInfo.price, 'AUD')
-        .then(function(productPriceIDR) {
-          const shopperAd = new ShopperAd({
-            user: req.user.id,
-            productUrl,
-            productImage: productInfo.image,
-            productPrice: productInfo.price,
-            productWeight: productInfo.weight,
-            productPriceIDR,
-            shippingAddress,
-            localCourier,
-            notes,
-            website: new URL(productUrl).hostname,
-            status: 'draft'
-          });
+    // Convert price to IDR
+    const productPriceIDR = await CurrencyConverter.convertToIDR(productInfo.price, 'AUD');
 
-          // Calculate fees
-          shopperAd.calculateFees()
-            .then(function() {
-              shopperAd.save()
-                .then(function(savedAd) {
-                  res.status(201).json(savedAd);
-                })
-                .catch(function(error) {
-                  console.error('Error saving ad:', error);
-                  res.status(500).json({ message: 'Server error' });
-                });
-            })
-            .catch(function(error) {
-              console.error('Error calculating fees:', error);
-              res.status(500).json({ message: 'Server error' });
-            });
-        })
-        .catch(function(error) {
-          console.error('Error converting price:', error);
-          res.status(500).json({ message: 'Server error' });
-        });
-    })
-    .catch(function(error) {
-      console.error('Error scraping product:', error);
-      res.status(500).json({ message: 'Server error' });
+    const shopperAd = new ShopperAd({
+      user: req.user.id,
+      productUrl,
+      productImage: productInfo.image,
+      productPrice: productInfo.price,
+      productWeight: productInfo.weight,
+      productPriceIDR,
+      shippingAddress,
+      localCourier,
+      notes,
+      website: new URL(productUrl).hostname,
+      status: 'draft'
     });
+
+    // Calculate fees
+    await shopperAd.calculateFees();
+    await shopperAd.save();
+    res.status(201).json(shopperAd);
+  } catch (error) {
+    console.error('Error creating shopper ad:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Update product information manually
-router.patch('/draft/:id/product-info', auth, function(req, res) {
-  const { productImage, productPrice, productWeight } = req.body;
-  const shopperAd = ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
+router.patch('/draft/:id/product-info', auth, async function(req, res) {
+  try {
+    const { productImage, productPrice, productWeight } = req.body;
+    const shopperAd = await ShopperAd.findOne({ _id: req.params.id, user: req.user.id });
 
-  if (!shopperAd) {
-    return res.status(404).json({ message: 'Ad not found' });
+    if (!shopperAd) {
+      return res.status(404).json({ message: 'Ad not found' });
+    }
+
+    // Upload image to Cloudflare if productImage is a URL
+    if (productImage && productImage.startsWith('http')) {
+      const cloudflareResult = await uploadImageFromUrl(productImage);
+      if (cloudflareResult.success) {
+        shopperAd.productImage = cloudflareResult.imageUrl;
+      }
+    } else {
+      shopperAd.productImage = productImage;
+    }
+
+    shopperAd.productPrice = productPrice;
+    shopperAd.productWeight = productWeight;
+    const productPriceIDR = await CurrencyConverter.convertToIDR(productPrice, 'AUD');
+    shopperAd.productPriceIDR = productPriceIDR;
+    await shopperAd.calculateFees();
+    await shopperAd.save();
+    res.json(shopperAd);
+  } catch (error) {
+    console.error('Error updating shopper ad:', error);
+    res.status(500).json({ message: 'Server error' });
   }
-
-  // Update product information
-  shopperAd.productImage = productImage;
-  shopperAd.productPrice = productPrice;
-  shopperAd.productWeight = productWeight;
-  CurrencyConverter.convertToIDR(productPrice, 'AUD')
-    .then(function(productPriceIDR) {
-      shopperAd.productPriceIDR = productPriceIDR;
-      shopperAd.calculateFees()
-        .then(function() {
-          shopperAd.save()
-            .then(function(updatedAd) {
-              res.json(updatedAd);
-            })
-            .catch(function(error) {
-              console.error('Error saving ad:', error);
-              res.status(500).json({ message: 'Server error' });
-            });
-        })
-        .catch(function(error) {
-          console.error('Error calculating fees:', error);
-          res.status(500).json({ message: 'Server error' });
-        });
-    })
-    .catch(function(error) {
-      console.error('Error converting price:', error);
-      res.status(500).json({ message: 'Server error' });
-    });
 });
 
 // Get all active shopper ads
