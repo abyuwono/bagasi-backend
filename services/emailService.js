@@ -295,6 +295,60 @@ class EmailService {
       throw error;
     }
   }
+
+  async sendNewMessageEmail(recipient, sender, adTitle) {
+    try {
+      const template = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: recipient.email,
+              name: recipient.username
+            }
+          }
+        ],
+        subject: "New Message in Your Chat - Bagasi",
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">New Message Received</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                You have received a new message from ${sender.username} regarding the item: ${adTitle}
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Login to Bagasi to view and respond to your messages.
+              </p>
+              
+              <div style="background-color: #34D399; color: white; padding: 15px; border-radius: 4px; font-size: 18px; text-align: center; margin-bottom: 20px;">
+                <a href="https://market.bagasi.id" style="color: white; text-decoration: none;">View Messages</a>
+              </div>
+            </div>
+            
+            <div style="text-align: center; color: #666; font-size: 12px;">
+              <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
+              <p>&copy; ${new Date().getFullYear()} Bagasi. All rights reserved.</p>
+            </div>
+          </div>
+        `
+      };
+
+      const response = await client.sendMail(template);
+      return response;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  }
 };
 
 module.exports = new EmailService();
