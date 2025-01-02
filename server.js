@@ -107,7 +107,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/shopper-ads', shopperAdsRoutes);
-app.use('/chat', chatRoutes);
+app.use('/api/chat', chatRoutes);
 
 // MongoDB connection with fallback to local
 const connectDB = async () => {
