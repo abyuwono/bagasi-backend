@@ -5,7 +5,7 @@ const Chat = require('../models/Chat');
 const emailService = require('../services/emailService');
 
 // Get chat room by ad ID
-router.get('/ad/:adId', auth, async (req, res) => {
+router.get('/ad/:adId', [auth], async (req, res) => {
   try {
     const chat = await Chat.findOne({
       shopperAd: req.params.adId,
@@ -27,7 +27,7 @@ router.get('/ad/:adId', auth, async (req, res) => {
 });
 
 // Send message
-router.post('/:chatId/messages', auth, async (req, res) => {
+router.post('/:chatId/messages', [auth], async (req, res) => {
   try {
     const { content } = req.body;
     const chat = await Chat.findOne({
@@ -80,7 +80,7 @@ router.post('/:chatId/messages', auth, async (req, res) => {
 });
 
 // Mark messages as read
-router.patch('/:chatId/read', auth, async (req, res) => {
+router.patch('/:chatId/read', [auth], async (req, res) => {
   try {
     const chat = await Chat.findOne({
       _id: req.params.chatId,
@@ -107,7 +107,7 @@ router.patch('/:chatId/read', auth, async (req, res) => {
 });
 
 // Get user's active chats
-router.get('/active', auth, async (req, res) => {
+router.get('/active', [auth], async (req, res) => {
   try {
     const chats = await Chat.find({
       status: 'active',
