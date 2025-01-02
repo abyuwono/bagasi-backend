@@ -96,6 +96,7 @@ router.patch('/draft/:id/product-info', auth, async function(req, res) {
 router.get('/active', function(req, res) {
   ShopperAd.find({ status: 'active' })
     .populate('user', 'username')
+    .select('productImage cloudflareImageUrl cloudflareImageId productUrl productWeight commission status')
     .sort('-createdAt')
     .then(function(ads) {
       res.json(ads);
