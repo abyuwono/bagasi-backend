@@ -46,6 +46,18 @@ const shopperAdSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
+  totalWeight: {
+    type: Number,
+    get: function() {
+      return this.productWeight * (this.quantity || 1);
+    }
+  },
+  totalAmount: {
+    type: Number,
+    get: function() {
+      return this.productPrice * (this.quantity || 1);
+    }
+  },
   productPriceIDR: {
     type: Number,
     required: true
@@ -112,10 +124,6 @@ const shopperAdSchema = new mongoose.Schema({
       'coles.com.au',
       'woolworths.com.au'
     ],
-    required: true
-  },
-  totalAmount: {
-    type: Number,
     required: true
   },
   platformFee: {
