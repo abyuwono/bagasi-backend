@@ -38,6 +38,12 @@ const shopperAdSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  productCurrency: {
+    type: String,
+    default: function() {
+      return this.commission?.currency || 'AUD';
+    }
+  },
   productWeight: {
     type: Number,
     required: true
