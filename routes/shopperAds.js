@@ -319,32 +319,52 @@ router.patch('/:id/cancel', auth, async function(req, res) {
     if (!ad) {
       return res.status(404).json({ message: 'Ad not found' });
     }
-    if (!['in_discussion', 'accepted'].includes(ad.status)) {
-      return res.status(400).json({ message: 'Cannot cancel at this stage' });
-    }
 
-    ad.status = 'cancelled';
-    await ad.save();
-
-    // Send notification to the other party
     const isShopper = req.user.id === ad.user._id.toString();
-    const otherUser = isShopper ? ad.selectedTraveler : ad.user;
-    
-    if (otherUser) {
-      try {
-        // Send appropriate email based on user role
-        if (isShopper) {
-          await emailService.sendOrderCancelledEmailToTraveler(otherUser, ad);
-        } else {
-          await emailService.sendOrderCancelledEmailToShopper(otherUser, ad);
-        }
-      } catch (emailError) {
-        console.error('Error sending email:', emailError);
-        // Continue even if email fails
-      }
+    const isTraveler = req.user.id === (ad.selectedTraveler?._id?.toString() || '');
+
+    // Shopper can only cancel if status is active
+    if (isShopper && ad.status === 'active') {
+      ad.status = 'cancelled';
+      await ad.save();
+      return res.json({ message: 'Ad cancelled permanently' });
     }
 
-    res.json({ message: 'Order cancelled successfully' });
+    // Shopper can reject traveler only during discussion
+    if (isShopper && ad.status === 'in_discussion') {
+      ad.status = 'active';
+      const traveler = ad.selectedTraveler; // Store reference before nulling
+      ad.selectedTraveler = null;
+      await ad.save();
+
+      try {
+        await emailService.sendOrderCancelledEmailToTraveler(traveler, ad);
+        await emailService.sendOrderCancelledEmailToShopper(ad.user, ad);
+      } catch (emailError) {
+        console.error('Error sending emails:', emailError);
+      }
+
+      return res.json({ message: 'Traveler rejected, ad is now active again' });
+    }
+
+    // Traveler can cancel during discussion, accepted, or shipped stages
+    if (isTraveler && ['in_discussion', 'accepted', 'shipped'].includes(ad.status)) {
+      ad.status = 'active';
+      const traveler = ad.selectedTraveler; // Store reference before nulling
+      ad.selectedTraveler = null;
+      await ad.save();
+
+      try {
+        await emailService.sendOrderCancelledEmailToShopper(ad.user, ad);
+        await emailService.sendOrderCancelledEmailToTraveler(traveler, ad);
+      } catch (emailError) {
+        console.error('Error sending emails:', emailError);
+      }
+
+      return res.json({ message: 'Order cancelled, ad is now active again' });
+    }
+
+    return res.status(400).json({ message: 'Cannot cancel at this stage or unauthorized' });
   } catch (error) {
     console.error('Error cancelling order:', error);
     res.status(500).json({ message: 'Server error' });
