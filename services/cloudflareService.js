@@ -1,28 +1,22 @@
 const axios = require('axios');
 const FormData = require('form-data');
 
-// Use environment variables
-const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-
 const uploadImageFromUrl = async (imageUrl) => {
   try {
+    const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+    const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+
     if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID) {
       throw new Error('Cloudflare credentials not found in environment variables');
     }
 
-    // Download the image first
-    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    const buffer = Buffer.from(imageResponse.data, 'binary');
-
     const formData = new FormData();
-    formData.append('file', buffer, {
-      filename: 'product-image.jpg',
-      contentType: 'image/jpeg'
-    });
+    formData.append('url', imageUrl);
+    formData.append('requireSignedURLs', 'false');
+    formData.append('metadata', JSON.stringify({ source: 'bagasi-marketplace' }));
 
     const response = await axios.post(
-      `https://api.cloudflare.com/client/v4/${CLOUDFLARE_ACCOUNT_ID}/images/v1`,
+      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/images/v1`,
       formData,
       {
         headers: {

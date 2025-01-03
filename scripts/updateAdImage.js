@@ -1,11 +1,11 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const ShopperAd = require('../models/ShopperAd');
-const axios = require('axios');
+const { uploadImageFromUrl } = require('../services/cloudflareService');
 
 // Hardcode values for testing
 process.env.CLOUDFLARE_API_TOKEN = 'oUqcSM5wS20WvVJNz070N1dHuzY7KX4g_P72od_m';
-process.env.CLOUDFLARE_ACCOUNT_ID = '5b82bb1773f2cf3656b035bb';
+process.env.CLOUDFLARE_ACCOUNT_ID = 'f515e268b7a98324a18a2d5240534c4b';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const adId = '67760827acfd22a98f222776';
@@ -22,19 +22,19 @@ async function updateAdImage() {
       process.exit(1);
     }
 
-    // Verify the image URL is accessible
-    try {
-      const response = await axios.head(imageUrl);
-      if (response.status === 200) {
-        ad.productImage = imageUrl;
-        await ad.save();
-        console.log('Successfully updated ad with new image URL');
-      } else {
-        console.error('Image URL is not accessible');
-      }
-    } catch (error) {
-      console.error('Error checking image URL:', error.message);
+    console.log('Uploading image to Cloudflare...');
+    const cloudflareResult = await uploadImageFromUrl(imageUrl);
+    
+    if (!cloudflareResult.success) {
+      console.error('Failed to upload to Cloudflare:', cloudflareResult.error);
+      process.exit(1);
     }
+
+    ad.cloudflareImageUrl = cloudflareResult.imageUrl;
+    ad.cloudflareImageId = cloudflareResult.imageId;
+    
+    await ad.save();
+    console.log('Successfully updated ad with Cloudflare image:', cloudflareResult.imageUrl);
     
     process.exit(0);
   } catch (error) {

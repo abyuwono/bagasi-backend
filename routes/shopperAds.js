@@ -304,49 +304,46 @@ router.patch('/:id/complete', auth, function(req, res) {
 });
 
 // Cancel order
-router.patch('/:id/cancel', auth, function(req, res) {
-  ShopperAd.findOne({
-    _id: req.params.id,
-    $or: [{ user: req.user.id }, { selectedTraveler: req.user.id }]
-  })
-    .then(function(ad) {
-      if (!ad) {
-        return res.status(404).json({ message: 'Ad not found' });
-      }
-      if (!['in_discussion', 'accepted'].includes(ad.status)) {
-        return res.status(400).json({ message: 'Cannot cancel at this stage' });
-      }
+router.patch('/:id/cancel', auth, async function(req, res) {
+  try {
+    const ad = await ShopperAd.findOne({
+      _id: req.params.id,
+      $or: [{ user: req.user.id }, { selectedTraveler: req.user.id }]
+    }).populate('user selectedTraveler');
 
-      ad.status = 'cancelled';
-      ad.save()
-        .then(function() {
-          const otherUser = req.user.id === ad.user.toString() ? ad.selectedTraveler : ad.user;
-          emailService.sendEmail({
-            to: otherUser.email,
-            subject: 'Order Cancelled',
-            template: 'order-cancelled',
-            context: {
-              userName: otherUser.username,
-              productUrl: ad.productUrl
-            }
-          })
-            .then(function() {
-              res.json({ message: 'Order cancelled successfully' });
-            })
-            .catch(function(error) {
-              console.error('Error sending email:', error);
-              res.status(500).json({ message: 'Server error' });
-            });
-        })
-        .catch(function(error) {
-          console.error('Error saving ad:', error);
-          res.status(500).json({ message: 'Server error' });
-        });
-    })
-    .catch(function(error) {
-      console.error('Error finding ad:', error);
-      res.status(500).json({ message: 'Server error' });
-    });
+    if (!ad) {
+      return res.status(404).json({ message: 'Ad not found' });
+    }
+    if (!['in_discussion', 'accepted'].includes(ad.status)) {
+      return res.status(400).json({ message: 'Cannot cancel at this stage' });
+    }
+
+    ad.status = 'cancelled';
+    await ad.save();
+
+    // Send notification to the other party
+    const isShopper = req.user.id === ad.user._id.toString();
+    const otherUser = isShopper ? ad.selectedTraveler : ad.user;
+    
+    if (otherUser) {
+      try {
+        // Send appropriate email based on user role
+        if (isShopper) {
+          await emailService.sendOrderCancelledEmailToTraveler(otherUser, ad);
+        } else {
+          await emailService.sendOrderCancelledEmailToShopper(otherUser, ad);
+        }
+      } catch (emailError) {
+        console.error('Error sending email:', emailError);
+        // Continue even if email fails
+      }
+    }
+
+    res.json({ message: 'Order cancelled successfully' });
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Get shopper ads by traveler ID

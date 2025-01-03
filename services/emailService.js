@@ -349,6 +349,106 @@ class EmailService {
       throw error;
     }
   }
+
+  async sendOrderCancelledEmailToShopper(user, ad) {
+    try {
+      await client.sendMail({
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: user.email,
+              name: user.username
+            }
+          }
+        ],
+        subject: "Pesanan Jastip Dibatalkan - Bagasi",
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">Pesanan Jastip Dibatalkan</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Halo ${user.username},
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Pesanan jastip Anda untuk produk <strong>${ad.productUrl}</strong> telah dibatalkan.
+              </p>
+              
+              <p style="color: #666;">
+                Jika Anda masih membutuhkan produk ini, silakan buat pesanan baru atau cari jastiper lain yang tersedia.
+              </p>
+              
+              <p style="color: #666;">
+                Terima kasih telah menggunakan layanan Bagasi.
+              </p>
+            </div>
+          </div>
+        `
+      });
+    } catch (error) {
+      console.error('Error sending order cancelled email to shopper:', error);
+      throw error;
+    }
+  }
+
+  async sendOrderCancelledEmailToTraveler(user, ad) {
+    try {
+      await client.sendMail({
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: user.email,
+              name: user.username
+            }
+          }
+        ],
+        subject: "Pesanan Jastip Dibatalkan - Bagasi",
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">Pesanan Jastip Dibatalkan</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Halo ${user.username},
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Pesanan jastip untuk produk <strong>${ad.productUrl}</strong> telah dibatalkan.
+              </p>
+              
+              <p style="color: #666;">
+                Anda dapat mencari pesanan jastip lain yang tersedia di platform kami.
+              </p>
+              
+              <p style="color: #666;">
+                Terima kasih telah menggunakan layanan Bagasi.
+              </p>
+            </div>
+          </div>
+        `
+      });
+    } catch (error) {
+      console.error('Error sending order cancelled email to traveler:', error);
+      throw error;
+    }
+  }
 };
 
 module.exports = new EmailService();
