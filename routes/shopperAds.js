@@ -392,4 +392,18 @@ router.get('/traveler/:id', auth, function(req, res) {
   }
 });
 
+// Get ads by shopper ID
+router.get('/shopper/:id', auth, async function(req, res) {
+  try {
+    const shopperId = new ObjectId(req.params.id);
+    const ads = await ShopperAd.find({ user: shopperId })
+      .populate('selectedTraveler', 'username isVerified isActive')
+      .sort({ createdAt: -1 });
+    res.json(ads);
+  } catch (error) {
+    console.error('Error fetching shopper ads:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
