@@ -134,6 +134,7 @@ router.get('/:id', function(req, res) {
 // Traveler requests to help
 router.post('/:id/request', auth, function(req, res) {
   ShopperAd.findById(req.params.id)
+    .populate('user', 'email username')
     .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
