@@ -155,15 +155,12 @@ router.post('/:id/request', auth, function(req, res) {
           ad.save()
             .then(function() {
               // Send email notification to shopper
-              emailService.sendEmail({
+              emailService.sendNewTravelerNotification({
                 to: ad.user.email,
-                subject: 'New Request for Your Shopping Ad',
-                template: 'traveler-request',
-                context: {
-                  shopperName: ad.user.username,
-                  travelerName: req.user.username,
-                  productUrl: ad.productUrl
-                }
+                shopperName: ad.user.username,
+                travelerName: req.user.username,
+                productUrl: ad.productUrl,
+                adId: ad._id
               })
                 .then(function() {
                   res.json({ message: 'Request sent successfully', chatId: savedChat._id });

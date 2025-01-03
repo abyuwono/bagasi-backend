@@ -69,7 +69,7 @@ class EmailService {
     }
   }
 
-  async sendAdCreatedEmail(user, ad, paymentUrl) {
+  async sendAdCreatedEmail(ad) {
     try {
       const template = {
         from: {
@@ -79,12 +79,12 @@ class EmailService {
         to: [
           {
             email_address: {
-              address: user.email,
-              name: user.username
+              address: ad.user.email,
+              name: ad.user.username
             }
           }
         ],
-        subject: "Your Jastip Request is Created - Bagasi",
+        subject: "Iklan Jastip Anda Telah Dibuat - Bagasi",
         htmlbody: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -92,19 +92,15 @@ class EmailService {
             </div>
             
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-              <h2 style="color: #333; margin-bottom: 20px;">Jastip Request Created</h2>
+              <h2 style="color: #333; margin-bottom: 20px;">Iklan Jastip Anda Telah Dibuat</h2>
               
               <p style="color: #666; margin-bottom: 20px;">
-                Your jastip request has been created successfully.
+                Iklan jastip Anda telah berhasil dibuat.
               </p>
               
               <p style="color: #666; margin-bottom: 20px;">
-                Please click the link below to proceed with the payment.
+                Silakan tunggu traveller yang tertarik untuk membantu Anda.
               </p>
-              
-              <div style="background-color: #34D399; color: white; padding: 15px; border-radius: 4px; font-size: 18px; text-align: center; margin-bottom: 20px;">
-                <a href="${paymentUrl}" style="color: white; text-decoration: none;">Proceed with Payment</a>
-              </div>
             </div>
             
             <div style="text-align: center; color: #666; font-size: 12px;">
@@ -117,6 +113,71 @@ class EmailService {
 
       const response = await client.sendMail(template);
       return response;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  }
+
+  async sendNewTravelerNotification({ to, shopperName, travelerName, productUrl, adId }) {
+    try {
+      const emailData = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: to,
+              name: to.split('@')[0]
+            }
+          }
+        ],
+        subject: `Ada request baru dari traveller ${travelerName}`,
+        htmlbody: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">Request Baru untuk Iklan Jastip Anda</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Hai ${shopperName},
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                ${travelerName} tertarik untuk membantu Anda membeli barang ini:
+                <br><br>
+                ${productUrl}
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Anda bisa langsung chat dengan ${travelerName} untuk mendiskusikan detail pembelian.
+              </p>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://market.bagasi.id/shopper-ads/${adId}" 
+                   style="background-color: #34D399; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                  Klik di sini untuk Chat Sekarang
+                </a>
+              </div>
+
+              <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                Segera respon request ini agar ${travelerName} bisa membantu Anda mendapatkan barang yang diinginkan.
+              </p>
+            </div>
+            
+            <div style="text-align: center; color: #666; font-size: 12px;">
+              <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
+            </div>
+          </div>
+        `
+      };
+
+      await client.sendMail(emailData);
     } catch (error) {
       console.error('Error sending email:', error);
       throw error;
@@ -175,6 +236,75 @@ class EmailService {
       console.error('Error sending email:', error);
       throw error;
     }
+  }
+
+  async sendEmail({ to, subject, template, context }) {
+    try {
+      const templateContent = await this.getEmailTemplate(template, context);
+      
+      const emailData = {
+        from: {
+          address: process.env.EMAIL_FROM || "noreply@bagasi.id",
+          name: "Bagasi"
+        },
+        to: [
+          {
+            email_address: {
+              address: to,
+              name: to.split('@')[0]
+            }
+          }
+        ],
+        subject: subject,
+        htmlbody: templateContent
+      };
+
+      await client.sendMail(emailData);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  }
+
+  async getEmailTemplate(template, context) {
+    let content = '';
+    switch (template) {
+      case 'traveler-request':
+        content = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #34D399;">Bagasi</h1>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">New Request for Your Shopping Ad</h2>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Hi ${context.shopperName},
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                ${context.travelerName} has requested to help you with your shopping request for:
+                <br><br>
+                ${context.productUrl}
+              </p>
+              
+              <p style="color: #666; margin-bottom: 20px;">
+                Please check your Bagasi account to review the request and chat with the traveler.
+              </p>
+            </div>
+            
+            <div style="text-align: center; color: #666; font-size: 12px;">
+              <p>This is an automated message, please do not reply to this email.</p>
+            </div>
+          </div>
+        `;
+        break;
+      // Add more templates as needed
+      default:
+        throw new Error(`Email template '${template}' not found`);
+    }
+    return content;
   }
 
   getTrackingUrl(courier, trackingNumber) {
