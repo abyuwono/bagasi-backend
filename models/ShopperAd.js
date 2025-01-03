@@ -10,6 +10,16 @@ const shopperAdSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  merchantName: {
+    type: String,
+    default: function() {
+      try {
+        return new URL(this.productUrl).hostname;
+      } catch {
+        return '';
+      }
+    }
+  },
   productName: {
     type: String,
     required: true
