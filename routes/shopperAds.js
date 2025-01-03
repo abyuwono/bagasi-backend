@@ -95,18 +95,23 @@ router.patch('/draft/:id/product-info', auth, async function(req, res) {
 });
 
 // Get all active shopper ads
-router.get('/active', function(req, res) {
-  ShopperAd.find({ status: 'active' })
+router.get('/active', async function(req, res) {
+  try {
+    const ads = await ShopperAd.find({
+      status: { $in: ['active', 'in_discussion'] }
+    })
     .populate('user', 'username')
     .select('productImage cloudflareImageUrl cloudflareImageId productUrl productWeight commission status')
-    .sort('-createdAt')
-    .then(function(ads) {
-      res.json(ads);
-    })
-    .catch(function(error) {
-      console.error('Error fetching active shopper ads:', error);
-      res.status(500).json({ message: 'Server error' });
+    .sort({ 
+      status: -1, // This will put 'in_discussion' after 'active'
+      createdAt: -1 // Then sort by newest first within each status
     });
+
+    res.json(ads);
+  } catch (error) {
+    console.error('Error fetching active shopper ads:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Get shopper ad details
