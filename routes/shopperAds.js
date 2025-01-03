@@ -101,7 +101,7 @@ router.get('/active', async function(req, res) {
       status: { $in: ['active', 'in_discussion'] }
     })
     .populate('user', 'username')
-    .select('productImage cloudflareImageUrl cloudflareImageId productUrl productWeight commission status')
+    .select('productImage cloudflareImageUrl cloudflareImageId productUrl productName merchantName productWeight commission status')
     .sort({ 
       status: -1, // This will put 'in_discussion' after 'active'
       createdAt: -1 // Then sort by newest first within each status
