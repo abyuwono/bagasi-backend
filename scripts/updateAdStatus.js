@@ -27,6 +27,15 @@ async function updateAdStatus() {
             console.log('Ad not found');
         }
 
+        const ad = await ShopperAd.findById('67760827acfd22a98f222776');
+        if (ad) {
+            ad.merchantName = 'Chemist Warehouse';
+            await ad.save();
+            console.log('Updated merchantName for ad:', ad._id);
+        } else {
+            console.log('Ad not found');
+        }
+
         await mongoose.disconnect();
         console.log('Disconnected from MongoDB');
     } catch (error) {
