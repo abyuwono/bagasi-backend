@@ -54,6 +54,15 @@ router.post('/draft', auth, async function(req, res) {
     // Calculate fees
     await shopperAd.calculateFees();
     await shopperAd.save();
+
+    // Create a chat room for this ad
+    const chat = new Chat({
+      ad: shopperAd._id,
+      shopper: req.user.id,
+      messages: []
+    });
+    await chat.save();
+
     res.status(201).json(shopperAd);
   } catch (error) {
     console.error('Error creating shopper ad:', error);
