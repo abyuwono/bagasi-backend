@@ -342,6 +342,14 @@ router.patch('/:id/cancel', auth, async function(req, res) {
         console.error('Error sending emails:', emailError);
       }
 
+      // Update associated chat
+      await Chat.updateOne(
+        { shopperAd: ad._id },
+        { 
+          $set: { status: 'archived' }
+        }
+      );
+
       return res.json({ message: 'Traveler rejected, ad is now active again' });
     }
 
@@ -359,12 +367,48 @@ router.patch('/:id/cancel', auth, async function(req, res) {
         console.error('Error sending emails:', emailError);
       }
 
+      // Update associated chat
+      await Chat.updateOne(
+        { shopperAd: ad._id },
+        { 
+          $set: { status: 'archived' }
+        }
+      );
+
       return res.json({ message: 'Order cancelled, ad is now active again' });
     }
 
     return res.status(400).json({ message: 'Cannot cancel at this stage or unauthorized' });
   } catch (error) {
     console.error('Error cancelling order:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update ad status to active and clear traveler
+router.post('/:id/cancel-traveler', auth, async function(req, res) {
+  try {
+    const ad = await ShopperAd.findOne({ _id: req.params.id });
+    if (!ad) {
+      return res.status(404).json({ message: 'Ad not found' });
+    }
+
+    // Update the ad
+    ad.status = 'active';
+    ad.selectedTraveler = null;
+    await ad.save();
+
+    // Update associated chat
+    await Chat.updateOne(
+      { shopperAd: ad._id },
+      { 
+        $set: { status: 'archived' }
+      }
+    );
+
+    res.json({ message: 'Traveler canceled successfully' });
+  } catch (error) {
+    console.error('Error canceling traveler:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
