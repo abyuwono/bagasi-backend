@@ -56,8 +56,8 @@ router.post('/ad/:adId/messages', auth, async function(req, res) {
     // Add message
     chat.messages.push({
       sender: req.user.id,
-      text: text,
-      createdAt: new Date()
+      content: text,
+      timestamp: new Date()
     });
 
     await chat.save();
