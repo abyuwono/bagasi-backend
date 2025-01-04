@@ -14,6 +14,7 @@ router.get('/ad/:adId', auth, function(req, res) {
     .populate('shopper', 'username')
     .populate('traveler', 'username')
     .populate('shopperAd')
+    .populate('messages.sender', 'username')
     .then(chat => {
       if (!chat) {
         return res.status(404).json({ message: 'Chat not found' });
