@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
 const Chat = require('../models/Chat');
+const ShopperAd = require('../models/ShopperAd');
 const emailService = require('../services/emailService');
 
 // Get chat room by ad ID
@@ -23,6 +24,53 @@ router.get('/ad/:adId', auth, function(req, res) {
       console.error('Error fetching chat:', error);
       res.status(500).json({ message: 'Server error' });
     });
+});
+
+// Send message to ad
+router.post('/ad/:adId/messages', auth, async function(req, res) {
+  try {
+    const { text } = req.body;
+    
+    // Find or create chat room
+    let chat = await Chat.findOne({
+      shopperAd: req.params.adId,
+      $or: [{ shopper: req.user.id }, { traveler: req.user.id }]
+    });
+
+    if (!chat) {
+      // Find the ad to get shopper and traveler
+      const ad = await ShopperAd.findById(req.params.adId);
+      if (!ad) {
+        return res.status(404).json({ message: 'Ad not found' });
+      }
+
+      // Create new chat room
+      chat = new Chat({
+        shopperAd: ad._id,
+        shopper: ad.user,
+        traveler: req.user.id,
+        messages: []
+      });
+    }
+
+    // Add message
+    chat.messages.push({
+      sender: req.user.id,
+      text: text,
+      createdAt: new Date()
+    });
+
+    await chat.save();
+
+    // Populate and return the latest message
+    await chat.populate('messages.sender', 'username');
+    const latestMessage = chat.messages[chat.messages.length - 1];
+
+    res.json(latestMessage);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Send message
