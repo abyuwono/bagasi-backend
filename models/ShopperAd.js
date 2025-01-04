@@ -144,6 +144,9 @@ const shopperAdSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  toJSON: { getters: true },
+  toObject: { getters: true }
 });
 
 // Pre-save middleware to update the updatedAt timestamp
