@@ -29,7 +29,7 @@ router.get('/ad/:adId', auth, function(req, res) {
 // Send message to ad
 router.post('/ad/:adId/messages', auth, async function(req, res) {
   try {
-    const { text } = req.body;
+    const { content } = req.body;
     
     // Find or create chat room
     let chat = await Chat.findOne({
@@ -56,7 +56,7 @@ router.post('/ad/:adId/messages', auth, async function(req, res) {
     // Add message
     chat.messages.push({
       sender: req.user.id,
-      content: text,
+      content,
       timestamp: new Date()
     });
 
