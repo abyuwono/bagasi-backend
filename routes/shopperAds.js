@@ -112,7 +112,7 @@ router.get('/active', async function(req, res) {
     .populate('user', 'username')
     .select('productImage cloudflareImageUrl cloudflareImageId productUrl productName merchantName productWeight quantity totalWeight commission status')
     .sort({ 
-      status: -1, // This will put 'in_discussion' after 'active'
+      status: 1, // This will put 'active' before 'in_discussion'
       createdAt: -1 // Then sort by newest first within each status
     });
 
@@ -124,20 +124,20 @@ router.get('/active', async function(req, res) {
 });
 
 // Get shopper ad details
-router.get('/:id', async function(req, res) {
-  try {
-    const ad = await ShopperAd.findById(req.params.id)
+router.get('/:id', function(req, res) {
+  ShopperAd.findById(req.params.id)
       .populate('user', 'username')
-      .populate('selectedTraveler', 'username');
-
+    .populate('selectedTraveler', 'username')
+    .then(function(ad) {
     if (!ad) {
       return res.status(404).json({ message: 'Ad not found' });
     }
     res.json(ad);
-  } catch (error) {
+    })
+    .catch(function(error) {
     console.error('Error fetching shopper ad:', error);
     res.status(500).json({ message: 'Server error' });
-  }
+    });
 });
 
 // Traveler requests to help
