@@ -109,8 +109,8 @@ router.get('/active', async function(req, res) {
     const ads = await ShopperAd.find({
       status: { $in: ['active', 'in_discussion'] }
     })
-    .populate('user', 'username')
-    .select('productImage cloudflareImageUrl cloudflareImageId productUrl productName merchantName productWeight quantity totalWeight commission status')
+    .populate('user', 'username rating isVerified totalReviews')
+    .select('productImage cloudflareImageUrl cloudflareImageId productUrl productName merchantName productWeight quantity totalWeight commission status rating')
     .sort({ 
       status: 1, // This will put 'active' before 'in_discussion'
       createdAt: -1 // Then sort by newest first within each status
@@ -126,8 +126,8 @@ router.get('/active', async function(req, res) {
 // Get shopper ad details
 router.get('/:id', function(req, res) {
   ShopperAd.findById(req.params.id)
-      .populate('user', 'username')
-    .populate('selectedTraveler', 'username')
+      .populate('user', 'username rating isVerified totalReviews')
+    .populate('selectedTraveler', 'username rating isVerified totalReviews')
     .then(function(ad) {
     if (!ad) {
       return res.status(404).json({ message: 'Ad not found' });
@@ -448,7 +448,7 @@ router.get('/shopper/:id', auth, async function(req, res) {
   try {
     const shopperId = new ObjectId(req.params.id);
     const ads = await ShopperAd.find({ user: shopperId })
-      .populate('selectedTraveler', 'username isVerified isActive')
+      .populate('selectedTraveler', 'username rating isVerified totalReviews')
       .sort({ createdAt: -1 });
     res.json(ads);
   } catch (error) {
