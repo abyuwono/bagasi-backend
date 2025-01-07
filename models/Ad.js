@@ -42,7 +42,7 @@ const adSchema = new mongoose.Schema({
   },
   currency: {
     type: String,
-    enum: ['AUD', 'IDR', 'USD', 'SGD', 'KRW', 'JPY'],
+    enum: ['AUD', 'IDR', 'USD', 'SGD', 'KRW', 'JPY', 'EUR'],
     default: 'AUD',
     required: true,
   },
