@@ -3,6 +3,25 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const PaymentService = require('../services/paymentService');
 const ShopperAd = require('../models/ShopperAd');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Create payment intent for ad posting
+router.post('/create-payment-intent', auth, async (req, res) => {
+  try {
+    const amount = 10000; // Fixed amount for posting an ad: IDR 10,000
+    
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'idr',
+      metadata: { userId: req.user.id }
+    });
+
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    console.error('Error creating payment intent:', error);
+    res.status(500).json({ message: 'Failed to create payment intent' });
+  }
+});
 
 // Create payment token for an ad
 router.post('/token/:adId', auth, async (req, res) => {

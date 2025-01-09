@@ -16,44 +16,64 @@ async function addBagasiAds() {
       process.exit(1);
     }
 
-    // Common notes for Jakarta-Tokyo ad
-    const jakartaTokyoNotes = `
-• Lokasi Jakarta: Cengkareng, Jakarta Barat
-• Lokasi Tokyo: Stay Hotel di Tokyo
+    // Common notes for both routes
+    const commonNotes = `
+• Lokasi Indonesia: Jakarta
+• Lokasi Saudi: Jeddah
 
 • Ketentuan:
-  - Tidak terima barang terlarang
-  - Eks ongkir domestik Jepang
-  - Pelunasan fee jastip saat landing di jepang
-  - Menerima titipan belanja barang Indo n jepang (waktu terbatas)
-  - Bisa bantu checkout marketplace alamat cengkareng (biaya barang pas checkout, pelunasan fee saat landing di jepang)
-  - Tidak termasuk bea cukai
-  - Maksimal penerimaan barang H-1
+  - Menerima Jastip supermarket/online shop
+  - Barang diterima paling lambat 2 hari sebelum keberangkatan
+  - Bersedia di repack
+  - Pembulatan ke atas
+  - Tidak berisi barang-barang terlarang sesuai aturan imigrasi
+  - Belum termasuk ongkir domestik & cukai
 `;
 
-    // Create Jakarta to Tokyo ad
-    const jakartaToTokyoAd = new Ad({
+    // Create Indonesia to Saudi ad
+    const indoToSaudiAd = new Ad({
       user: masterUser._id,
-      customDisplayName: 'Endy Dut',
-      customRating: 4.8,
-      customWhatsapp: '+6281291252892',
+      customDisplayName: 'Lulu Afuad',
+      customRating: 4.7,
+      customWhatsapp: '+6285643702066',
       departureCity: 'Jakarta',
-      departureCityDetail: 'Cengkareng, Jakarta Barat',
-      arrivalCity: 'Tokyo',
-      arrivalCityDetail: 'Stay Hotel di Tokyo',
-      departureDate: '2025-01-15',
-      expiresAt: '2025-01-14',
-      availableWeight: 80,
-      pricePerKg: 110000,
+      departureCityDetail: 'Jakarta',
+      arrivalCity: 'Jeddah',
+      arrivalCityDetail: 'Jeddah',
+      departureDate: '2025-02-18',
+      expiresAt: '2025-02-16',
+      availableWeight: 20,
+      pricePerKg: 100000,
       currency: 'IDR',
       minimumWeight: 1,
-      additionalNotes: jakartaTokyoNotes,
+      additionalNotes: commonNotes,
       status: 'active'
     });
 
-    // Save the ad
-    await jakartaToTokyoAd.save();
-    console.log('Jakarta to Tokyo ad created');
+    // Create Saudi to Indonesia ad
+    const saudiToIndoAd = new Ad({
+      user: masterUser._id,
+      customDisplayName: 'Lulu Afuad',
+      customRating: 4.7,
+      customWhatsapp: '+6285643702066',
+      departureCity: 'Jeddah',
+      departureCityDetail: 'Jeddah',
+      arrivalCity: 'Jakarta',
+      arrivalCityDetail: 'Jakarta',
+      departureDate: '2025-03-04',
+      expiresAt: '2025-03-02',
+      availableWeight: 20,
+      pricePerKg: 130000,
+      currency: 'IDR',
+      minimumWeight: 1,
+      additionalNotes: commonNotes,
+      status: 'active'
+    });
+
+    // Save the ads
+    await indoToSaudiAd.save();
+    await saudiToIndoAd.save();
+    console.log('Indonesia-Saudi and Saudi-Indonesia ads created');
 
     // Update sitemap.xml
     const sitemapPath = path.join(__dirname, '../../frontend/public/sitemap.xml');
@@ -62,10 +82,16 @@ async function addBagasiAds() {
     const currentDate = new Date().toISOString();
     const newEntries = [
       {
-        id: jakartaToTokyoAd._id,
+        id: indoToSaudiAd._id,
         from: 'jakarta',
-        to: 'tokyo',
-        date: '15-januari-2025'
+        to: 'jeddah',
+        date: '18-februari-2025'
+      },
+      {
+        id: saudiToIndoAd._id,
+        from: 'jeddah',
+        to: 'jakarta',
+        date: '04-maret-2025'
       }
     ];
 
