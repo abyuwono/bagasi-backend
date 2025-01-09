@@ -6,9 +6,9 @@ const ShopperAd = require('../models/ShopperAd');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // Create payment intent for ad posting
-router.post('/create-payment-intent', auth, async (req, res) => {
+router.post('/create-ad-posting-intent', auth, async (req, res) => {
   try {
-    const amount = 10000; // Fixed amount for posting an ad: IDR 10,000
+    const amount = 195000; // Fixed amount for posting an ad: IDR 195,000
     
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
