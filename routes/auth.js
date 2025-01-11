@@ -12,7 +12,10 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, role, whatsappNumber } = req.body;
+    const { email, password: hashedPassword, whatsappNumber, role } = req.body;
+
+    // Decode the base64 password
+    const decodedPassword = Buffer.from(hashedPassword, 'base64').toString();
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -20,10 +23,10 @@ router.post('/register', async (req, res) => {
     }
 
     const user = new User({
-      email,
-      password,
-      role,
+      email: email.toLowerCase(),
+      password: decodedPassword,
       whatsappNumber,
+      role: role || 'shopper',
     });
 
     await user.save();
@@ -176,7 +179,7 @@ router.post('/request-reset-password', async (req, res) => {
 // Reset password with OTP
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp, newPassword: hashedPassword } = req.body;
 
     // Validate OTP
     const isValidOTP = verifyOTP(email.toLowerCase(), otp);
@@ -190,14 +193,17 @@ router.post('/reset-password', async (req, res) => {
       return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
     }
 
+    // Decode the base64 password
+    const decodedPassword = Buffer.from(hashedPassword, 'base64').toString();
+
     // Hash new password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    const hashedNewPassword = await bcrypt.hash(decodedPassword, salt);
 
     // Update password directly in database to avoid double hashing
     await User.updateOne(
       { _id: user._id },
-      { $set: { password: hashedPassword } }
+      { $set: { password: hashedNewPassword } }
     );
 
     res.status(200).json({ message: 'Password berhasil direset' });
