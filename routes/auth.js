@@ -162,7 +162,7 @@ router.post('/request-reset-password', async (req, res) => {
     await storeOTP(email.toLowerCase(), otp);
 
     // Send OTP email
-    await emailService.sendOTPEmail(email.toLowerCase(), otp);
+    await emailService.sendOTPEmail(email.toLowerCase(), otp, 'reset');
 
     res.status(200).json({ message: 'Jika email terdaftar, Anda akan menerima kode OTP.' });
   } catch (error) {
