@@ -2,6 +2,10 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
+const { generateOTP, saveOTP, validateOTP } = require('../utils/otp');
+const EmailService = require('../services/emailService');
+const emailService = new EmailService();
 
 const router = express.Router();
 
@@ -139,6 +143,63 @@ router.post('/logout', async (req, res) => {
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({ message: 'Error during logout' });
+  }
+});
+
+// Request password reset
+router.post('/request-reset', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // Return 200 even if user not found to prevent user enumeration
+      return res.status(200).json({ message: 'If your email is registered, you will receive a password reset OTP.' });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    await saveOTP(email, otp);
+
+    // Send OTP email
+    await emailService.sendOTPEmail(email, otp);
+
+    res.status(200).json({ message: 'If your email is registered, you will receive a password reset OTP.' });
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    res.status(500).json({ message: 'Error processing password reset request' });
+  }
+});
+
+// Reset password with OTP
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    // Validate OTP
+    const isValidOTP = await validateOTP(email, otp);
+    if (!isValidOTP) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // Find user and update password
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ message: 'Error resetting password' });
   }
 });
 

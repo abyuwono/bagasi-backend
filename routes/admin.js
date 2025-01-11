@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Ad = require('../models/Ad');
+const fetch = require('node-fetch');
 const { authenticateAdmin } = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch');
 
 // Admin credentials
 const ADMIN_USERNAME = 'administrator';

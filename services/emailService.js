@@ -11,7 +11,7 @@ const client = new SendMailClient({
 });
 
 class EmailService {
-  async sendOTPEmail(email, otp) {
+  async sendOTPEmail(email, otp, type = 'verification') {
     try {
       const template = {
         from: {
@@ -26,7 +26,7 @@ class EmailService {
             }
           }
         ],
-        subject: "Kode OTP Verifikasi Email Bagasi",
+        subject: type === 'reset' ? "Kode OTP Reset Password Bagasi" : "Kode OTP Verifikasi Email Bagasi",
         htmlbody: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -34,34 +34,37 @@ class EmailService {
             </div>
             
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-              <h2 style="color: #333; margin-bottom: 20px;">Verifikasi Email Anda</h2>
-              
-              <p style="color: #666; margin-bottom: 20px;">
-                Gunakan kode OTP berikut untuk menyelesaikan proses pendaftaran Anda:
+              <h2 style="color: #333; margin-bottom: 20px;">
+                ${type === 'reset' ? 'Reset Password' : 'Verifikasi Email Anda'}
+              </h2>
+              <p style="color: #666; line-height: 1.6;">
+                ${type === 'reset' 
+                  ? 'Anda telah meminta untuk mereset password akun Bagasi Anda. Gunakan kode OTP berikut untuk melanjutkan proses reset password:'
+                  : 'Terima kasih telah mendaftar di Bagasi. Gunakan kode OTP berikut untuk memverifikasi email Anda:'}
               </p>
-              
-              <div style="background-color: #34D399; color: white; padding: 15px; border-radius: 4px; font-size: 24px; text-align: center; letter-spacing: 5px; margin-bottom: 20px;">
-                ${otp}
+              <div style="background-color: #fff; padding: 15px; border-radius: 4px; text-align: center; margin: 20px 0;">
+                <h3 style="color: #34D399; font-size: 24px; letter-spacing: 5px; margin: 0;">
+                  ${otp}
+                </h3>
               </div>
-              
-              <p style="color: #666; margin-bottom: 10px;">
-                Kode OTP ini akan kadaluarsa dalam 5 menit.
-              </p>
-              
-              <p style="color: #666;">
-                Jika Anda tidak merasa melakukan pendaftaran di Bagasi, abaikan email ini.
+              <p style="color: #666; line-height: 1.6;">
+                Kode OTP ini akan kadaluarsa dalam 10 menit.
+                ${type === 'reset'
+                  ? 'Jika Anda tidak meminta reset password, abaikan email ini.'
+                  : 'Jika Anda tidak mendaftar di Bagasi, abaikan email ini.'}
               </p>
             </div>
             
-            <div style="text-align: center; color: #666; font-size: 12px;">
+            <div style="text-align: center; color: #999; font-size: 14px;">
               <p>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</p>
-              <p>&copy; ${new Date().getFullYear()} Bagasi. All rights reserved.</p>
+              <p>&copy; 2024 Bagasi. All rights reserved.</p>
             </div>
           </div>
         `
       };
 
       const response = await client.sendMail(template);
+      console.log('Email sent successfully:', response);
       return response;
     } catch (error) {
       console.error('Error sending email:', error);
