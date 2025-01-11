@@ -147,27 +147,27 @@ router.post('/logout', async (req, res) => {
 });
 
 // Request password reset
-router.post('/request-reset', async (req, res) => {
+router.post('/request-reset-password', async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       // Return 200 even if user not found to prevent user enumeration
-      return res.status(200).json({ message: 'If your email is registered, you will receive a password reset OTP.' });
+      return res.status(200).json({ message: 'Jika email terdaftar, Anda akan menerima kode OTP.' });
     }
 
     // Generate OTP
     const otp = generateOTP();
-    await saveOTP(email, otp);
+    await saveOTP(email.toLowerCase(), otp);
 
     // Send OTP email
-    await emailService.sendOTPEmail(email, otp);
+    await emailService.sendOTPEmail(email.toLowerCase(), otp);
 
-    res.status(200).json({ message: 'If your email is registered, you will receive a password reset OTP.' });
+    res.status(200).json({ message: 'Jika email terdaftar, Anda akan menerima kode OTP.' });
   } catch (error) {
     console.error('Password reset request error:', error);
-    res.status(500).json({ message: 'Error processing password reset request' });
+    res.status(500).json({ message: 'Terjadi kesalahan. Silakan coba lagi nanti.' });
   }
 });
 
