@@ -183,7 +183,7 @@ router.post('/reset-password', async (req, res) => {
     }
 
     // Find user and update password
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user) {
       return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
     }
