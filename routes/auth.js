@@ -184,9 +184,11 @@ router.post('/reset-password', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update password
-    user.password = hashedPassword;
-    await user.save();
+    // Update password directly in the database to avoid double hashing
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { password: hashedPassword } }
+    );
     console.log('Password updated for user:', user.email);
 
     res.status(200).json({ message: 'Password berhasil direset' });
