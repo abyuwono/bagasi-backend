@@ -52,46 +52,59 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for email:', email);
 
-    // Find user with password field
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email dan password harus diisi' });
+    }
+
+    // Explicitly select the password field
+    const user = await User.findOne({ email }).select('+password +active +isActive');
+    
+    // Use the same error message for both cases to prevent user enumeration
     if (!user) {
-      console.log('User not found for email:', email);
-      return res.status(401).json({ message: 'Email atau password salah' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    console.log('Found user:', user.email);
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'Account is inactive' });
+    }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      console.log('Invalid password for user:', user.email);
-      return res.status(401).json({ message: 'Email atau password salah' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Create token
-    const payload = {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role
-      }
-    };
+    // Check if account is deactivated after successful password check
+    if (!user.active) {
+      return res.status(403).json({ message: 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.' });
+    }
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
-      (err, token) => {
-        if (err) throw err;
-        console.log('Login successful for user:', user.email);
-        res.json({ token });
-      }
-    );
+    const token = jwt.sign({ userId: user._id, isAdmin: user.role === 'admin' }, process.env.JWT_SECRET, {
+      expiresIn: '24h',
+    });
+
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        whatsappNumber: user.whatsappNumber,
+        membership: user.membership,
+        isVerified: user.isVerified,
+        username: user.username,
+        rating: user.rating,
+        totalReviews: user.totalReviews,
+      },
+    });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Terjadi kesalahan saat login' });
+    res.status(500).json({ message: 'Gagal masuk ke sistem', error: error.message });
   }
 });
 
@@ -162,34 +175,26 @@ router.post('/request-reset-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    console.log('Reset password request for email:', email);
 
     // Validate OTP
     const isValidOTP = verifyOTP(email.toLowerCase(), otp);
     if (!isValidOTP) {
-      console.log('Invalid OTP for email:', email);
       return res.status(400).json({ message: 'Kode OTP tidak valid atau sudah kadaluarsa' });
     }
 
     // Find user and update password
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user) {
-      console.log('User not found for email:', email);
       return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
     }
-
-    console.log('Found user:', user.email);
 
     // Hash new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update password directly in the database to avoid double hashing
-    await User.updateOne(
-      { _id: user._id },
-      { $set: { password: hashedPassword } }
-    );
-    console.log('Password updated for user:', user.email);
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
 
     res.status(200).json({ message: 'Password berhasil direset' });
   } catch (error) {
