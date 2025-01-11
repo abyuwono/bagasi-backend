@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
-const { generateOTP, saveOTP, validateOTP } = require('../utils/otp');
+const { generateOTP, storeOTP, verifyOTP } = require('../utils/otp');
 const EmailService = require('../services/emailService');
 const emailService = new EmailService();
 
@@ -159,7 +159,7 @@ router.post('/request-reset-password', async (req, res) => {
 
     // Generate OTP
     const otp = generateOTP();
-    await saveOTP(email.toLowerCase(), otp);
+    await storeOTP(email.toLowerCase(), otp);
 
     // Send OTP email
     await emailService.sendOTPEmail(email.toLowerCase(), otp);
@@ -177,15 +177,15 @@ router.post('/reset-password', async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
     // Validate OTP
-    const isValidOTP = await validateOTP(email, otp);
+    const isValidOTP = verifyOTP(email.toLowerCase(), otp);
     if (!isValidOTP) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      return res.status(400).json({ message: 'Kode OTP tidak valid atau sudah kadaluarsa' });
     }
 
     // Find user and update password
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
     }
 
     // Hash new password
@@ -196,10 +196,10 @@ router.post('/reset-password', async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    res.status(200).json({ message: 'Password has been reset successfully' });
+    res.status(200).json({ message: 'Password berhasil direset' });
   } catch (error) {
     console.error('Password reset error:', error);
-    res.status(500).json({ message: 'Error resetting password' });
+    res.status(500).json({ message: 'Terjadi kesalahan saat mereset password' });
   }
 });
 
