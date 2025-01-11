@@ -51,10 +51,10 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password: hashedPassword } = req.body;
 
     // Validate input
-    if (!email || !password) {
+    if (!email || !hashedPassword) {
       return res.status(400).json({ message: 'Email dan password harus diisi' });
     }
 
@@ -70,7 +70,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Account is inactive' });
     }
 
-    const isMatch = await user.comparePassword(password);
+    // Decode the base64 password before comparing
+    const decodedPassword = Buffer.from(hashedPassword, 'base64').toString();
+    const isMatch = await user.comparePassword(decodedPassword);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
