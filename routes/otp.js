@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { sendOTPEmail } = require('../services/emailService');
+const EmailService = require('../services/emailService');
 const { sendWhatsAppOTP } = require('../services/whatsappService');
 const { sendVonageOTP, verifyVonageOTP } = require('../services/vonageService');
 const User = require('../models/User'); 
 
 // Store OTPs temporarily (in production, use Redis or similar)
 const otpStore = new Map();
+
+// Initialize email service
+const emailService = new EmailService();
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -38,7 +41,7 @@ router.post('/send', async (req, res) => {
 
     const otp = generateOTP();
     await saveOTP(email, otp);
-    await sendOTPEmail(email, otp);
+    await emailService.sendOTPEmail(email, otp);
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to send OTP', error: error.message });
