@@ -54,8 +54,7 @@ router.get('/users', authenticateAdmin, async (req, res) => {
       _id: 1,
       email: 1,
       username: 1,
-      firstName: 1,
-      lastName: 1,
+      fullname: 1,
       whatsappNumber: 1,
       isActive: 1,
       isVerified: 1,
@@ -66,7 +65,7 @@ router.get('/users', authenticateAdmin, async (req, res) => {
       createdAt: 1,
       updatedAt: 1,
       role: 1
-    });
+    }).lean();
     res.json(users);
   } catch (error) {
     console.error('Error getting users:', error);
@@ -173,10 +172,19 @@ router.post('/users/set-active', authenticateAdmin, async (req, res) => {
 router.put('/users/:userId/fullname', authenticateAdmin, async (req, res) => {
   try {
     const { fullname } = req.body;
+    
+    // Validate input
+    if (!fullname || fullname.trim() === '') {
+      return res.status(400).json({ message: 'Fullname is required' });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.params.userId,
-      { fullname },
-      { new: true }
+      { fullname: fullname.trim() },
+      { 
+        new: true,
+        select: '_id username email fullname whatsappNumber isActive isVerified rating totalReviews role'
+      }
     );
     
     if (!user) {
