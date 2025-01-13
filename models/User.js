@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   fullname: {
     type: String,
     required: true,
+    select: true
   },
   email: {
     type: String,
@@ -77,6 +78,7 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
 }, {
+  timestamps: true,
   toJSON: {
     transform: function(doc, ret) {
       delete ret.password;
@@ -85,6 +87,10 @@ const userSchema = new mongoose.Schema({
     virtuals: true
   },
   toObject: {
+    transform: function(doc, ret) {
+      delete ret.password;
+      return ret;
+    },
     virtuals: true
   }
 });
