@@ -12,7 +12,7 @@ if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.length < 30)
 
 // Prices in IDR
 const PRICES = {
-  ad_posting: 15000, // Rp 195.000
+  ad_posting: 195000, // Rp 195.000
   membership: 95000,  // Rp 95.000 per month
 };
 
