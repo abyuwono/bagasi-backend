@@ -16,6 +16,7 @@ router.post('/', auth, checkRole(['traveler']), async (req, res) => {
       availableWeight,
       pricePerKg,
       additionalNotes,
+      currency,
     } = req.body;
 
     // Set expiration date to 1 day before departure
@@ -31,6 +32,7 @@ router.post('/', auth, checkRole(['traveler']), async (req, res) => {
       availableWeight,
       pricePerKg,
       additionalNotes,
+      currency,
       expiresAt,
     });
 
