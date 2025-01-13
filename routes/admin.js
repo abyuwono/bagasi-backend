@@ -173,16 +173,17 @@ router.post('/users/set-active', authenticateAdmin, async (req, res) => {
 router.put('/users/:userId/fullname', authenticateAdmin, async (req, res) => {
   try {
     const { fullname } = req.body;
-    const user = await User.findById(req.params.userId);
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { fullname },
+      { new: true }
+    );
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.fullname = fullname;
-    await user.save();
-
-    res.json({ success: true, fullname: user.fullname });
+    res.json({ success: true, user });
   } catch (error) {
     console.error('Error updating user fullname:', error);
     res.status(500).json({ message: 'Server error' });
