@@ -39,6 +39,14 @@ const adSchema = new mongoose.Schema({
   pricePerKg: {
     type: Number,
     required: true,
+    min: 0.01,
+    validate: {
+      validator: function(v) {
+        // Check if it's a positive number with max 2 decimal places
+        return /^\d+(\.\d{0,2})?$/.test(v.toString()) && v > 0;
+      },
+      message: props => `${props.value} is not a valid price. Price must be positive with maximum 2 decimal places.`
+    }
   },
   currency: {
     type: String,
