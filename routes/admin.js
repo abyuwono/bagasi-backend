@@ -258,6 +258,29 @@ router.put('/users/:userId/reviews', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Membership management endpoint
+router.put('/users/:userId/membership', authenticateAdmin, async (req, res) => {
+  try {
+    const { type, validUntil } = req.body;
+    
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.membership = {
+      type: type || 'none',
+      validUntil: validUntil ? new Date(validUntil) : null
+    };
+    await user.save();
+
+    res.json({ membership: user.membership });
+  } catch (error) {
+    console.error('Error updating user membership:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Ad management endpoints
 router.get('/ads', authenticateAdmin, async (req, res) => {
   try {
