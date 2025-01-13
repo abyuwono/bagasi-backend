@@ -74,7 +74,7 @@ router.get('/', async (req, res) => {
     console.log('Query:', JSON.stringify(query, null, 2));
 
     const ads = await Ad.find(query)
-      .populate('user', 'username rating totalReviews isVerified')
+      .populate('user', 'username fullname rating totalReviews isVerified')
       .sort({ createdAt: -1 });
 
     console.log(`Found ${ads.length} ads`);
@@ -114,7 +114,7 @@ router.get('/:id', async (req, res) => {
 
   try {
     const ad = await Ad.findById(req.params.id)
-      .populate('user', 'username rating totalReviews isVerified whatsappNumber');
+      .populate('user', 'username fullname rating totalReviews isVerified whatsappNumber');
     
     if (!ad) {
       return res.status(404).json({ message: 'ID Jasa Titipan tidak ditemukan atau telah kadaluarsa / expired' });

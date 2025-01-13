@@ -193,7 +193,7 @@ router.put('/users/:userId/fullname', authenticateAdmin, async (req, res) => {
 router.get('/ads', authenticateAdmin, async (req, res) => {
   try {
     const ads = await Ad.find()
-      .populate('user', 'name email whatsapp')
+      .populate('user', 'username fullname email whatsappNumber')
       .sort({ createdAt: -1 });
     
     // Check if ad should be shown on main page
@@ -236,7 +236,7 @@ router.patch('/ads/:adId/status', authenticateAdmin, async (req, res) => {
     const { adId } = req.params;
     const { active } = req.body;
     
-    const ad = await Ad.findById(adId).populate('user', 'name email whatsapp');
+    const ad = await Ad.findById(adId).populate('user', 'username fullname email whatsappNumber');
     if (!ad) {
       return res.status(404).json({ error: 'Ad not found' });
     }
@@ -283,7 +283,7 @@ router.post('/ads', authenticateAdmin, async (req, res) => {
     });
     
     await ad.save();
-    await ad.populate('user', 'name email whatsapp');
+    await ad.populate('user', 'username fullname email whatsappNumber');
     
     res.status(201).json(ad);
   } catch (error) {

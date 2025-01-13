@@ -109,7 +109,7 @@ router.get('/active', async function(req, res) {
     const ads = await ShopperAd.find({
       status: { $in: ['active', 'in_discussion'] }
     })
-    .populate('user', 'username rating isVerified totalReviews')
+    .populate('user', 'username fullname rating isVerified totalReviews')
     .select('productImage cloudflareImageUrl cloudflareImageId productUrl productName merchantName productWeight quantity totalWeight commission status rating')
     .sort({ 
       status: 1, // This will put 'active' before 'in_discussion'
@@ -126,8 +126,8 @@ router.get('/active', async function(req, res) {
 // Get shopper ad details
 router.get('/:id', function(req, res) {
   ShopperAd.findById(req.params.id)
-      .populate('user', 'username rating isVerified totalReviews')
-    .populate('selectedTraveler', 'username rating isVerified totalReviews')
+      .populate('user', 'username fullname rating isVerified totalReviews')
+    .populate('selectedTraveler', 'username fullname rating isVerified totalReviews')
     .then(function(ad) {
     if (!ad) {
       return res.status(404).json({ message: 'Ad not found' });
@@ -143,7 +143,7 @@ router.get('/:id', function(req, res) {
 // Traveler requests to help
 router.post('/:id/request', auth, function(req, res) {
   ShopperAd.findById(req.params.id)
-    .populate('user', 'email username')
+    .populate('user', 'email username fullname')
     .then(function(ad) {
       if (!ad) {
         return res.status(404).json({ message: 'Ad not found' });
@@ -321,7 +321,7 @@ router.patch('/:id/cancel', auth, async function(req, res) {
     const ad = await ShopperAd.findOne({
       _id: req.params.id,
       $or: [{ user: req.user.id }, { selectedTraveler: req.user.id }]
-    }).populate('user selectedTraveler');
+    }).populate('user', 'username fullname').populate('selectedTraveler', 'username fullname');
 
     if (!ad) {
       return res.status(404).json({ message: 'Ad not found' });
@@ -427,7 +427,7 @@ router.get('/traveler/:id', auth, function(req, res) {
   try {
     const travelerId = new ObjectId(req.params.id);
     ShopperAd.find({ selectedTraveler: travelerId })
-      .populate('user', 'username isVerified isActive')
+      .populate('user', 'username fullname isVerified isActive')
       .select('_id productUrl productName productWeight productPriceIDR commission status user')
       .sort('-createdAt')
       .then(function(ads) {
@@ -448,7 +448,7 @@ router.get('/shopper/:id', auth, async function(req, res) {
   try {
     const shopperId = new ObjectId(req.params.id);
     const ads = await ShopperAd.find({ user: shopperId })
-      .populate('selectedTraveler', 'username rating isVerified totalReviews')
+      .populate('selectedTraveler', 'username fullname rating isVerified totalReviews')
       .sort({ createdAt: -1 });
     res.json(ads);
   } catch (error) {
