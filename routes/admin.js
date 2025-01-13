@@ -131,11 +131,11 @@ router.patch('/users/:userId/status', authenticateAdmin, async (req, res) => {
 router.patch('/users/:userId/whatsapp', authenticateAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { whatsapp } = req.body;
+    const { whatsappNumber } = req.body;
     
     const user = await User.findByIdAndUpdate(
       userId,
-      { whatsapp },
+      { whatsappNumber },
       { new: true }
     );
     
