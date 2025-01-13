@@ -12,7 +12,7 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password: hashedPassword, whatsappNumber, role } = req.body;
+    const { email, password: hashedPassword, whatsappNumber, role, fullname } = req.body;
 
     // Decode the base64 password
     const decodedPassword = Buffer.from(hashedPassword, 'base64').toString();
@@ -27,6 +27,7 @@ router.post('/register', async (req, res) => {
       password: decodedPassword,
       whatsappNumber,
       role: role || 'shopper',
+      fullname,
     });
 
     await user.save();
@@ -43,6 +44,7 @@ router.post('/register', async (req, res) => {
         role: user.role,
         whatsappNumber: user.whatsappNumber,
         membership: user.membership,
+        fullname: user.fullname,
       },
     });
   } catch (error) {
