@@ -198,6 +198,66 @@ router.put('/users/:userId/fullname', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Update user rating
+router.put('/users/:userId/rating', authenticateAdmin, async (req, res) => {
+  try {
+    const { rating } = req.body;
+    
+    // Validate input
+    if (rating === undefined || rating < 0 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 0 and 5' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { rating },
+      { 
+        new: true,
+        select: '_id username email fullname whatsappNumber isActive isVerified rating totalReviews role'
+      }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Error updating user rating:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user total reviews
+router.put('/users/:userId/reviews', authenticateAdmin, async (req, res) => {
+  try {
+    const { totalReviews } = req.body;
+    
+    // Validate input
+    if (totalReviews === undefined || totalReviews < 0) {
+      return res.status(400).json({ message: 'Total reviews must be 0 or greater' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { totalReviews },
+      { 
+        new: true,
+        select: '_id username email fullname whatsappNumber isActive isVerified rating totalReviews role'
+      }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Error updating user total reviews:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Ad management endpoints
 router.get('/ads', authenticateAdmin, async (req, res) => {
   try {
