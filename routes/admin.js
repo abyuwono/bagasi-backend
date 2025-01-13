@@ -263,16 +263,20 @@ router.put('/users/:userId/membership', authenticateAdmin, async (req, res) => {
   try {
     const { type, validUntil } = req.body;
     
-    const user = await User.findById(req.params.userId);
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      {
+        $set: {
+          'membership.type': type || 'none',
+          'membership.validUntil': validUntil ? new Date(validUntil) : null
+        }
+      },
+      { new: true, runValidators: false }
+    );
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    user.membership = {
-      type: type || 'none',
-      validUntil: validUntil ? new Date(validUntil) : null
-    };
-    await user.save();
 
     res.json({ membership: user.membership });
   } catch (error) {
