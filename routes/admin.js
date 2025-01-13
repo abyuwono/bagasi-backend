@@ -64,7 +64,8 @@ router.get('/users', authenticateAdmin, async (req, res) => {
       totalReviews: 1,
       createdAt: 1,
       updatedAt: 1,
-      role: 1
+      role: 1,
+      membership: 1
     }).lean();
     res.json(users);
   } catch (error) {
