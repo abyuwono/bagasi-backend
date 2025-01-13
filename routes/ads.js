@@ -91,6 +91,7 @@ router.get('/', async (req, res) => {
       const adObj = ad.toObject();
       if (adObj.user) {
         const { email, whatsappNumber, ...safeUser } = adObj.user;
+        safeUser.fullname = adObj.user.fullname;
         adObj.user = safeUser;
       }
       // Remove customWhatsapp from the ad object
@@ -153,6 +154,7 @@ router.get('/:id', async (req, res) => {
       // Remove contact info for guests or users without active membership
       if (safeAd.user) {
         const { email, whatsappNumber, ...safeUser } = safeAd.user;
+        safeUser.fullname = safeAd.user.fullname;
         safeAd.user = safeUser;
       }
       // Also remove customWhatsapp from the ad itself
