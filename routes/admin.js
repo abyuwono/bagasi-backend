@@ -169,6 +169,26 @@ router.post('/users/set-active', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Update user fullname
+router.put('/users/:userId/fullname', authenticateAdmin, async (req, res) => {
+  try {
+    const { fullname } = req.body;
+    const user = await User.findById(req.params.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.fullname = fullname;
+    await user.save();
+
+    res.json({ success: true, fullname: user.fullname });
+  } catch (error) {
+    console.error('Error updating user fullname:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Ad management endpoints
 router.get('/ads', authenticateAdmin, async (req, res) => {
   try {
